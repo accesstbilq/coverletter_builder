@@ -1,0 +1,414 @@
+from typing import Optional, Dict, Any, Generator
+import json
+import time
+import traceback
+import math
+import threading
+
+
+def stream_generator(
+    agent,
+    agent_input: Dict[str, Any],
+    config: Dict[str, Any],
+) -> Generator[str, None, None]:
+    """
+    Streams SSE-like events from a multi-step agent with smooth 1-100% progress.
+    
+    **Guarantees:**
+    - Progress always starts at 1% and reaches exactly 100%
+    - Progress increases smoothly without gaps
+    - All agent phases are tracked but progress advances continuously
+    - Response sent immediately after progress reaches 100%
+    
+    Events:
+    - progress: {"type": "progress", "percent": int, "message": str}
+    - analysis_done: {"type": "analysis_done", "analysis": {...}}
+    - token: {"type": "token", "content": str}
+    - cover_letter_done: {"type": "cover_letter_done", "content": str}
+    - done: {"type": "done"}
+    - usage: {"type": "usage", "input_tokens": int, "output_tokens": int, ...}
+    - error: {"type": "error", "message": str}
+    """
+    
+    # ============================================
+    # PROGRESS TRACKING (CONTINUOUS 1-100)
+    # ============================================
+    last_progress = 0
+    last_emit_time = time.time()
+    start_time = time.time()
+    
+    # State tracking
+    current_phase = "init"
+    last_content = ""
+    
+    # Token usage
+    prompt_tokens = 0
+    completion_tokens = 0
+    
+    # Tool tracking
+    extraction_completed = False
+    projects_completed = False
+    generation_completed = False
+    
+    # Buffering
+    full_response_text = ""
+    generation_start_time = None
+    
+    def emit_sse(obj: dict) -> str:
+        """Format SSE data line"""
+        return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+    
+    def emit_progress(percent: int, message: str) -> str:
+        """Emit progress update (ensures monotonic 1-100 increase)"""
+        nonlocal last_progress, last_emit_time
+        
+        # Clamp to 1-100 range
+        percent = max(1, min(100, percent))
+        
+        # Only emit if progress increased
+        if percent > last_progress:
+            last_progress = percent
+            last_emit_time = time.time()
+            return emit_sse({
+                "type": "progress",
+                "percent": percent,
+                "message": message
+            })
+        return ""
+    
+    def smooth_progress(elapsed: float, estimated_total: float, base_percent: int) -> int:
+        """
+        Calculate smooth progress for phases without hard boundaries.
+        Ensures continuous upward movement.
+        """
+        if estimated_total <= 0:
+            return base_percent
+        
+        # Smooth curve: slower at start/end, faster in middle
+        ratio = min(1.0, elapsed / estimated_total)
+        # Use easing function for smoother curve
+        eased_ratio = ratio * (2 - ratio)  # ease-out-quad
+        return base_percent + int(eased_ratio * 20)  # Add up to 20% over this phase
+    
+    def calculate_generation_progress() -> int:
+        """
+        Calculate progress during generation phase (60-99%)
+        Based on characters received vs expected
+        """
+        if expected_chars == 0:
+            return PHASE_GENERATION_START
+        
+        ratio = min(1.0, chars_received / expected_chars)
+        progress_range = PHASE_GENERATION_END - PHASE_GENERATION_START
+        progress_points = ratio * progress_range
+        
+        return int(PHASE_GENERATION_START + progress_points)
+    
+    try:
+        # ============================================
+        # PHASE 1: INITIALIZATION (1-5%)
+        # ============================================
+        yield emit_progress(PHASE_INIT, "Initializing agent...")
+        current_phase = "init"
+        
+        # Small delay to show initial progress
+        time.sleep(0.1)
+        yield emit_progress(3, "Preparing to analyze cover letter...")
+        
+        # ============================================
+        # STREAM AGENT EXECUTION
+        # ============================================
+        for step in agent.stream(agent_input, config=config, stream_mode="messages"):
+            
+            # Validate step structure
+            if not isinstance(step, list) or not step:
+                continue
+            
+            last_message = step[-1]
+            message_type = getattr(last_message, 'type', None)
+            message_name = getattr(last_message, 'name', None)
+            
+            # ============================================
+            # HANDLE TOOL CALLS
+            # ============================================
+            if message_type == "tool":
+                
+                # --- Extraction Tool Started ---
+                if message_name == "extract_cover_letter_info" and not extraction_started:
+                    extraction_started = True
+                    current_phase = "analyzing"
+                    yield emit_progress(
+                        PHASE_ANALYZING_START,
+                        "Analyzing cover letter structure..."
+                    )
+                    
+                    # Gradual progress during analysis
+                    for pct in range(PHASE_ANALYZING_START + 5, PHASE_ANALYZING_END, 5):
+                        time.sleep(0.15)
+                        messages = [
+                            "Reading requirements...",
+                            "Identifying technologies...",
+                            "Extracting key details...",
+                            "Analyzing project scope..."
+                        ]
+                        msg_idx = (pct - PHASE_ANALYZING_START) // 5 % len(messages)
+                        yield emit_progress(pct, messages[msg_idx])
+                
+                # --- Projects Tool Started ---
+                elif message_name == "find_relevant_past_projects" and not projects_started:
+                    projects_started = True
+                    current_phase = "projects"
+                    yield emit_progress(
+                        PHASE_PROJECTS_START,
+                        "Searching for relevant past projects..."
+                    )
+                    
+                    # Gradual progress during project search
+                    for pct in range(PHASE_PROJECTS_START + 3, PHASE_PROJECTS_END, 4):
+                        time.sleep(0.12)
+                        messages = [
+                            "Searching project database...",
+                            "Matching technologies...",
+                            "Finding similar work..."
+                        ]
+                        msg_idx = (pct - PHASE_PROJECTS_START) // 4 % len(messages)
+                        yield emit_progress(pct, messages[msg_idx])
+            
+            # ============================================
+            # HANDLE TOOL OUTPUTS
+            # ============================================
+            elif message_type == "tool_output":
+                
+                # --- Extraction Complete ---
+                if message_name == "extract_cover_letter_info" and not extraction_completed:
+                    extraction_completed = True
+                    
+                    yield emit_progress(
+                        PHASE_ANALYZING_END,
+                        "Analysis complete!"
+                    )
+                    
+                    # Parse and emit structured data
+                    try:
+                        structured_data = json.loads(last_message.content)
+                        yield emit_sse({
+                            "type": "analysis_done",
+                            "analysis": structured_data
+                        })
+                        
+                        # Processing phase
+                        yield emit_progress(
+                            PHASE_ANALYSIS_PROCESS,
+                            "Processing analysis results..."
+                        )
+                        
+                    except json.JSONDecodeError as e:
+                        print(f"Error parsing extraction output: {e}")
+                        # Try to extract JSON from content
+                        content = str(last_message.content)
+                        if '{' in content and '}' in content:
+                            try:
+                                start = content.index('{')
+                                end = content.rindex('}') + 1
+                                structured_data = json.loads(content[start:end])
+                                yield emit_sse({
+                                    "type": "analysis_done",
+                                    "analysis": structured_data
+                                })
+                            except:
+                                pass
+                
+                # --- Projects Complete ---
+                elif message_name == "find_relevant_past_projects" and not projects_completed:
+                    projects_completed = True
+                    
+                    yield emit_progress(
+                        PHASE_PROJECTS_END,
+                        "Relevant projects found!"
+                    )
+                    
+                    # Processing phase
+                    yield emit_progress(
+                        PHASE_PROJECTS_PROCESS,
+                        "Incorporating project examples..."
+                    )
+            
+            # ============================================
+            # HANDLE AI RESPONSE (GENERATION)
+            # ============================================
+            elif message_type == "ai":
+                
+                # Mark generation start
+                if not generation_started:
+                    generation_started = True
+                    current_phase = "generation"
+                    yield emit_progress(
+                        PHASE_GENERATION_START,
+                        "Generating personalized response..."
+                    )
+                
+                # Stream tokens
+                current_content = last_message.content
+                
+                if isinstance(current_content, str):
+                    # Calculate delta from last content
+                    if current_content != last_content:
+                        
+                        if current_content.startswith(last_content):
+                            # Incremental update
+                            new_part = current_content[len(last_content):]
+                            if new_part:
+                                chars_received += len(new_part)
+                                yield emit_sse({
+                                    "type": "token",
+                                    "content": new_part
+                                })
+                                
+                                # Update progress based on generation
+                                current_pct = calculate_generation_progress()
+                                now = time.time()
+                                
+                                # Emit progress every 2% or 0.5 seconds
+                                if (current_pct > last_progress + 1) or (now - last_emit_time > 0.5):
+                                    messages = [
+                                        "Crafting introduction...",
+                                        "Writing response...",
+                                        "Adding expertise details...",
+                                        "Finalizing message...",
+                                        "Polishing response..."
+                                    ]
+                                    
+                                    # Select message based on progress
+                                    progress_ratio = (current_pct - PHASE_GENERATION_START) / (PHASE_GENERATION_END - PHASE_GENERATION_START)
+                                    msg_idx = min(len(messages) - 1, int(progress_ratio * len(messages)))
+                                    
+                                    yield emit_progress(current_pct, messages[msg_idx])
+                        else:
+                            # Full content replacement (rare)
+                            chars_received += len(current_content)
+                            yield emit_sse({
+                                "type": "token",
+                                "content": current_content
+                            })
+                            
+                            current_pct = calculate_generation_progress()
+                            yield emit_progress(current_pct, "Generating response...")
+                        
+                        last_content = current_content
+            
+            # ============================================
+            # UPDATE TOKEN USAGE
+            # ============================================
+            if hasattr(last_message, "usage_metadata") and last_message.usage_metadata:
+                usage = last_message.usage_metadata
+                prompt_tokens = usage.get("input_tokens", prompt_tokens)
+                completion_tokens = usage.get("output_tokens", completion_tokens)
+        
+        # ============================================
+        # FINALIZATION (99-100%)
+        # ============================================
+        
+        # Ensure we're at least at 99%
+        if last_progress < PHASE_GENERATION_END:
+            yield emit_progress(PHASE_GENERATION_END, "Finalizing response...")
+        
+        # Emit done event
+        yield emit_sse({"type": "done"})
+        
+        # Emit usage statistics
+        total_tokens = prompt_tokens + completion_tokens
+        yield emit_sse({
+            "type": "usage",
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens
+        })
+        
+        # Final 100% progress
+        yield emit_progress(PHASE_COMPLETE, "Complete!")
+        
+    except Exception as e:
+        # ============================================
+        # ERROR HANDLING
+        # ============================================
+        error_detail = traceback.format_exc()
+        print(f"Stream error: {error_detail}")
+        
+        yield emit_sse({
+            "type": "error",
+            "message": str(e),
+            "detail": error_detail if config.get("debug") else None
+        })
+        
+        # Emit error progress
+        yield emit_progress(last_progress, f"Error: {str(e)}")
+
+
+# ============================================
+# PROGRESS MESSAGE TEMPLATES
+# ============================================
+
+PROGRESS_MESSAGES = {
+    "init": [
+        "Initializing agent...",
+        "Preparing to analyze...",
+        "Loading tools..."
+    ],
+    "analyzing": [
+        "Reading cover letter...",
+        "Analyzing requirements...",
+        "Identifying technologies...",
+        "Extracting key details...",
+        "Understanding project scope...",
+        "Analyzing client needs..."
+    ],
+    "analysis_processing": [
+        "Processing analysis results...",
+        "Organizing findings...",
+        "Preparing data..."
+    ],
+    "projects": [
+        "Searching project database...",
+        "Finding relevant examples...",
+        "Matching technologies...",
+        "Identifying similar work...",
+        "Comparing project scopes..."
+    ],
+    "projects_processing": [
+        "Processing project data...",
+        "Selecting best examples...",
+        "Incorporating insights..."
+    ],
+    "generation": [
+        "Starting response generation...",
+        "Crafting introduction...",
+        "Writing personalized content...",
+        "Adding expertise details...",
+        "Incorporating examples...",
+        "Explaining approach...",
+        "Adding next steps...",
+        "Finalizing message...",
+        "Polishing response..."
+    ],
+    "finalization": [
+        "Finalizing response...",
+        "Performing final checks...",
+        "Completing..."
+    ]
+}
+
+
+def get_phase_message(phase: str, progress_in_phase: float) -> str:
+    """
+    Get appropriate message for current phase and progress.
+    
+    Args:
+        phase: Current phase name
+        progress_in_phase: Progress within phase (0.0 to 1.0)
+    
+    Returns:
+        Appropriate message for current progress
+    """
+    messages = PROGRESS_MESSAGES.get(phase, ["Processing..."])
+    index = min(len(messages) - 1, int(progress_in_phase * len(messages)))
+    return messages[index]

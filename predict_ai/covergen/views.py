@@ -8,20 +8,11 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from .helpers.system_prompts import build_system_prompt, build_agent_prompt
 from .helpers.stream_helper import stream_generator
-from .tools.extraction_tool import get_extraction_tool
+from .tools.extraction_tool import extract_cover_letter_info
+from .tools.retrieval_tool import find_relevant_past_projects # <-- IMPORT NEW TOOL
 from dotenv import load_dotenv
-from langchain_core.tools import tool
-from typing import Dict, List, Literal
-from pydantic import BaseModel, Field
 from langchain.agents import create_agent
-
 import json
-
-
-def chatbot_view(request: HttpRequest):
-    """Render chatbot page"""
-    return render(request, "coverletter.html")
-
 
 # LOAD ENV VARIABLE
 load_dotenv()
@@ -29,11 +20,16 @@ load_dotenv()
 # Initialize langchain short memory
 checkpointer = InMemorySaver()
 
+def chatbot_view(request: HttpRequest):
+    """Render chatbot page"""
+    return render(request, "coverletter.html")
+
 
 @csrf_exempt
 @require_POST
 def generate_cover_letter(request: HttpRequest):
     """Handle chat with dual output: JSON structure + formatted response."""
+    
     # ---- Parse request ----
     payload = json.loads(request.body)
     session_id = payload.get("session_id")
@@ -42,28 +38,26 @@ def generate_cover_letter(request: HttpRequest):
     file_base64 = payload.get("file_base64")
     file_name = payload.get("file_name")
     
+    # ---- Implement Plan Features ----
+    generation_mode = payload.get("generation_mode", "Creative") 
+
     config = {"configurable": {"thread_id": session_id}}
 
-    # ---- System prompts for both phases ----
-    from .helpers.system_prompts import EXTRACTION_SYSTEM_PROMPT, RESPONSE_SYSTEM_PROMPT
+    # ---- System prompt (New single-prompt logic) ----
+    from .helpers.system_prompts import AGENT_SYSTEM_PROMPT
     
-    extraction_prompt = build_system_prompt(
-        base_prompt=EXTRACTION_SYSTEM_PROMPT,
+    agent_prompt = build_system_prompt(
+        base_prompt=AGENT_SYSTEM_PROMPT,
         file_name=file_name,
-        file_base64=file_base64 or ""
-    )
-    
-    response_prompt = build_system_prompt(
-        base_prompt=RESPONSE_SYSTEM_PROMPT,
-        file_name=file_name,
-        file_base64=file_base64 or ""
+        file_base64=file_base64 or "",
+        generation_mode=generation_mode,
     )
 
     state = {"data": ''}
 
-    # ---- Build inputs ----
-    extraction_input = build_agent_prompt(
-        extraction_prompt, 
+    # ---- Build single agent input ----
+    agent_input = build_agent_prompt(
+        agent_prompt, 
         client_text, 
         state, 
         file_base64, 
@@ -71,26 +65,21 @@ def generate_cover_letter(request: HttpRequest):
         context_snippets
     )
     
-    response_input = build_agent_prompt(
-        response_prompt, 
-        client_text, 
-        state, 
-        file_base64, 
-        file_name, 
-        context_snippets
-    )
-
-        # ---- Create model with structured output tool ----
-    model = ChatOpenAI(model="gpt-4o", max_tokens=1024, temperature=0.1)
-    agent = create_agent(model=model, tools=[get_extraction_tool], checkpointer=checkpointer)
+    # ---- Create model with BOTH tools ----
+    model = ChatOpenAI(model="gpt-4.1-mini", max_tokens=1024, temperature=0.1)
+    
+    # The agent now has access to both tools
+    tools = [extract_cover_letter_info, find_relevant_past_projects]
+    
+    agent = create_agent(model=model, tools=tools, checkpointer=checkpointer)
 
     # ---- Streaming response with dual output ----
     response = StreamingHttpResponse(
         stream_generator(
             agent=agent,
-            agent_input=response_input,
-            config=config,
-            extraction_input=extraction_input,
+            agent_input=agent_input, # Pass the single input
+            config=config
+            # No longer need extraction_input
         ),
         content_type="text/event-stream",
         charset="utf-8",

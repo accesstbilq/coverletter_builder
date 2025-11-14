@@ -12,6 +12,7 @@ const addUrlBtn = document.getElementById('addUrlBtn');
 const urlList = document.getElementById('urlList');
 const fileInput = document.getElementById('fileInput');
 const generateBtn = document.getElementById('generateBtn');
+const errors = document.getElementById('errors');
 
 // Progress UI
 const progressArea = document.getElementById('progressArea');
@@ -32,6 +33,9 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 let finalAnalysisData = null;
 let finalCoverLetterText = null;
 
+// Category selection tracking
+let selectedCategories = [];
+
 // -----------------------------------------------------
 // INITIAL UI SETUP
 // -----------------------------------------------------
@@ -46,6 +50,8 @@ function resetUI() {
   finalAnalysisData = null;
   finalCoverLetterText = null;
   coverLetterContentEl.innerHTML = '<p>Loading cover letter...</p>';
+  if(!errors.classList.contains('hidden'))
+      errors.classList.add('hidden')
   // structuredJsonEl.textContent = '';
 }
 
@@ -155,6 +161,24 @@ fileInput.addEventListener('change', (ev) => {
 });
 
 // -----------------------------------------------------
+// CATEGORY SELECTION HANDLING
+// -----------------------------------------------------
+document.querySelectorAll('.category-checkbox').forEach((checkbox) => {
+  checkbox.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      // Add to selected categories
+      if (!selectedCategories.includes(e.target.value)) {
+        selectedCategories.push(e.target.value);
+      }
+    } else {
+      // Remove from selected categories
+      selectedCategories = selectedCategories.filter(cat => cat !== e.target.value);
+    }
+    console.log('Selected categories:', selectedCategories);
+  });
+});
+
+// -----------------------------------------------------
 // PROGRESS UI
 // -----------------------------------------------------
 function setProgress(pct, text = 'Processing...') {
@@ -176,9 +200,9 @@ function populateOutput(analysisData, coverLetterText) {
   if (coverLetterText) {
     finalCoverLetterText = coverLetterText;
     // Format the cover letter with paragraph tags
-    const paragraphs = coverLetterText.split('\n\n').filter(p => p.trim());
+    const paragraphs = coverLetterText.split('\n').filter(p => p.trim());
     coverLetterContentEl.innerHTML = paragraphs
-      .map(para => `<p>${para.trim()}</p>`)
+      .map(para => `<br><p>${para.trim()}</p>`)
       .join('');
   }
 
@@ -196,89 +220,271 @@ function populateOutput(analysisData, coverLetterText) {
 
 // Helper function to populate the breakdown cards
 function populateBreakdownCards(data) {
-  // Find and update each card based on data keys
+  // Find and update each card based on data keys from extraction_tool.py
+  console.log('[DEBUG] populateBreakdownCards received:', data);
   
-  // Important Point
-  const importantPointCard = document.querySelector('[data-section="important-point"]');
-  if (importantPointCard && data.important_point) {
-    const textEl = importantPointCard.querySelector('.card-content');
-    if (textEl) textEl.textContent = data.important_point;
+  if (!data) {
+    console.warn('[DEBUG] No data provided to populateBreakdownCards');
+    return;
   }
 
-  // Technical Questions
-  const techQuestionsCard = document.querySelector('[data-section="tech-questions"]');
-  if (techQuestionsCard && data.technical_questions && data.technical_questions.length > 0) {
-    const textEl = techQuestionsCard.querySelector('.card-content');
-    if (textEl) {
-      textEl.innerHTML = data.technical_questions
-        .map(q => `<li class="list-item">${q}</li>`)
-        .join('');
-    }
-  }
-
-  // Non-Technical Questions
-  const nonTechQuestionsCard = document.querySelector('[data-section="non-tech-questions"]');
-  if (nonTechQuestionsCard && data.non_technical_questions && data.non_technical_questions.length > 0) {
-    const textEl = nonTechQuestionsCard.querySelector('.card-content');
-    if (textEl) {
-      textEl.innerHTML = data.non_technical_questions
-        .map(q => `<li class="list-item">${q}</li>`)
-        .join('');
-    }
-  }
-
-  // Required Technologies
-  const techCard = document.querySelector('[data-section="required-tech"]');
-  if (techCard && data.technologies_needed && Object.keys(data.technologies_needed).length > 0) {
-    const textEl = techCard.querySelector('.card-content');
-    if (textEl) {
-      let techHtml = '';
-      for (const [category, techs] of Object.entries(data.technologies_needed)) {
-        techHtml += `<div class="mb-3"><strong>${category}:</strong>`;
-        techHtml += '<ul class="list-disc list-inside mt-1">';
-        techs.forEach(tech => {
-          techHtml += `<li>${tech}</li>`;
-        });
-        techHtml += '</ul></div>';
-      }
-      textEl.innerHTML = techHtml;
-    }
-  }
-
-  // Non-Technical Requirements
-  const nonTechReqCard = document.querySelector('[data-section="non-tech-req"]');
-  if (nonTechReqCard && data.non_tech_requirements && data.non_tech_requirements.length > 0) {
-    const textEl = nonTechReqCard.querySelector('.card-content');
-    if (textEl) {
-      textEl.innerHTML = data.non_tech_requirements
-        .map(req => `<li class="list-item">${req}</li>`)
-        .join('');
-    }
-  }
-
-  // Project Scope / Relevant Experience
-  const scopeCard = document.querySelector('[data-section="project-scope"]');
-  if (scopeCard && data.project_scope) {
-    const textEl = scopeCard.querySelector('.card-content');
-    if (textEl) textEl.textContent = data.project_scope;
-  }
-
-  // Unclear Points
-  const unclearCard = document.querySelector('[data-section="unclear-points"]');
-  if (unclearCard && data.clarifying_questions && data.clarifying_questions.length > 0) {
-    const textEl = unclearCard.querySelector('.card-content');
-    if (textEl) {
-      textEl.innerHTML = data.clarifying_questions
-        .map(q => `<li class="list-item">${q}</li>`)
-        .join('');
-    }
-  }
-
-  // Brief Message (greeting + main objective)
+  // ========================================
+  // CARD 1: Main Objective (from main_objective field)
+  // ========================================
   const briefCard = document.querySelector('[data-section="brief-message"]');
-  if (briefCard && data.main_objective) {
-    const textEl = briefCard.querySelector('.card-content');
-    if (textEl) textEl.textContent = data.main_objective;
+  if (briefCard) {
+    if (data.main_objective && data.main_objective.trim()) {
+      const textEl = briefCard.querySelector('.card-content');
+      if (textEl) textEl.textContent = data.main_objective;
+      briefCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated brief-message card with:', data.main_objective.substring(0, 50));
+    } else {
+      briefCard.classList.add('hidden');
+    }
+  }
+
+  // ========================================
+  // CARD 2: Project Scope / Relevant Experience
+  // ========================================
+  const scopeCard = document.querySelector('[data-section="project-scope"]');
+  if (scopeCard) {
+    if (data.project_scope && data.project_scope.trim()) {
+      const textEl = scopeCard.querySelector('.card-content');
+      if (textEl) textEl.textContent = data.project_scope;
+      scopeCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated project-scope card with:', data.project_scope.substring(0, 50));
+    } else {
+      scopeCard.classList.add('hidden');
+    }
+  }
+
+  // ========================================
+  // CARD 3: Required Technologies
+  // ========================================
+  const techCard = document.querySelector('[data-section="required-tech"]');
+  if (techCard) {
+    if (data.technologies_needed && typeof data.technologies_needed === 'object' && Object.keys(data.technologies_needed).length > 0) {
+      const textEl = techCard.querySelector('.card-content');
+      if (textEl) {
+        let techHtml = '';
+        for (const [category, techs] of Object.entries(data.technologies_needed)) {
+          if (category && techs) {
+            techHtml += `<div class="mb-3"><strong>${category}:</strong>`;
+            techHtml += '<ul class="list-disc list-inside mt-1">';
+            if (Array.isArray(techs)) {
+              techs.forEach(tech => {
+                if (tech) techHtml += `<li>${tech}</li>`;
+              });
+            } else {
+              techHtml += `<li>${techs}</li>`;
+            }
+            techHtml += '</ul></div>';
+          }
+        }
+        if (techHtml) textEl.innerHTML = techHtml;
+      }
+      techCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated required-tech card with', Object.keys(data.technologies_needed).length, 'categories');
+    } else {
+      techCard.classList.add('hidden');
+    }
+  }
+
+  // ========================================
+  // CARD 4: Non-Technical Requirements
+  // ========================================
+  const nonTechReqCard = document.querySelector('[data-section="non-tech-req"]');
+  if (nonTechReqCard) {
+    if (data.non_tech_requirements && Array.isArray(data.non_tech_requirements) && data.non_tech_requirements.length > 0) {
+      const textEl = nonTechReqCard.querySelector('.card-content');
+      if (textEl) {
+        const filteredReqs = data.non_tech_requirements.filter(req => req && req.trim());
+        if (filteredReqs.length > 0) {
+          textEl.innerHTML = filteredReqs
+            .map(req => `<li class="list-item">${req}</li>`)
+            .join('');
+        }
+      }
+      nonTechReqCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated non-tech-req card with', data.non_tech_requirements.length, 'items');
+    } else {
+      nonTechReqCard.classList.add('hidden');
+    }
+  }
+
+  // ========================================
+  // CARD 5: Clarifying Questions
+  // ========================================
+  const unclearCard = document.querySelector('[data-section="unclear-points"]');
+  if (unclearCard) {
+    if (data.clarifying_questions && Array.isArray(data.clarifying_questions) && data.clarifying_questions.length > 0) {
+      const textEl = unclearCard.querySelector('.card-content');
+      if (textEl) {
+        const filteredQuestions = data.clarifying_questions.filter(q => q && q.trim());
+        if (filteredQuestions.length > 0) {
+          textEl.innerHTML = filteredQuestions
+            .map(q => `<li class="list-item">${q}</li>`)
+            .join('');
+        }
+      }
+      unclearCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated unclear-points card with', data.clarifying_questions.length, 'questions');
+    } else {
+      unclearCard.classList.add('hidden');
+    }
+  }
+
+  // ========================================
+  // CARD 6: Tool Recommendations (Technical)
+  // ========================================
+  const techQuestionsCard = document.querySelector('[data-section="tech-questions"]');
+  if (techQuestionsCard) {
+    let toolsHtml = '';
+    
+    if (data.tool_recommendations && typeof data.tool_recommendations === 'object' && Object.keys(data.tool_recommendations).length > 0) {
+      for (const [tool, reasoning] of Object.entries(data.tool_recommendations)) {
+        if (tool && reasoning) {
+          if (Array.isArray(reasoning)) {
+            reasoning.forEach(r => {
+              if (r) toolsHtml += `<li class="list-item"><strong>${tool}:</strong> ${r}</li>`;
+            });
+          } else {
+            toolsHtml += `<li class="list-item"><strong>${tool}:</strong> ${reasoning}</li>`;
+          }
+        }
+      }
+    }
+    
+    if (toolsHtml) {
+      const textEl = techQuestionsCard.querySelector('.card-content');
+      if (textEl) {
+        textEl.innerHTML = toolsHtml;
+      }
+      techQuestionsCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated tech-questions card with tool recommendations');
+    } else {
+      techQuestionsCard.classList.add('hidden');
+    }
+  }
+
+  // ========================================
+  // CARD 7: Reference Sites / URLs
+  // ========================================
+  const nonTechQuestionsCard = document.querySelector('[data-section="non-tech-questions"]');
+  if (nonTechQuestionsCard) {
+    if (data.reference_sites && Array.isArray(data.reference_sites) && data.reference_sites.length > 0) {
+      const textEl = nonTechQuestionsCard.querySelector('.card-content');
+      if (textEl) {
+        const filteredSites = data.reference_sites.filter(site => site && site.trim());
+        if (filteredSites.length > 0) {
+          textEl.innerHTML = filteredSites
+            .map(site => `<li class="list-item">${site}</li>`)
+            .join('');
+        }
+      }
+      nonTechQuestionsCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated non-tech-questions card with', data.reference_sites.length, 'reference sites');
+    } else {
+      nonTechQuestionsCard.classList.add('hidden');
+    }
+  }
+
+  // ========================================
+  // CARD 8: Important Point / Greeting
+  // ========================================
+  const importantPointCard = document.querySelector('[data-section="important-point"]');
+  if (importantPointCard) {
+    if (data.greeting && data.greeting.trim()) {
+      const textEl = importantPointCard.querySelector('.card-content');
+      if (textEl) textEl.textContent = data.greeting;
+      importantPointCard.classList.remove('hidden');
+      console.log('[DEBUG] Populated important-point card with:', data.greeting.substring(0, 50));
+    } else {
+      importantPointCard.classList.add('hidden');
+    }
+  }
+
+  console.log('[DEBUG] Breakdown card population complete');
+}
+
+// Helper function to extract text content from an element (handles nested lists)
+function extractTextFromElement(element) {
+  const clone = element.cloneNode(true);
+  const listItems = clone.querySelectorAll('.list-item');
+  
+  if (listItems.length > 0) {
+    // If there are list items, extract their text
+    return Array.from(listItems).map(li => li.textContent.trim()).join('\n');
+  }
+  
+  return clone.textContent.trim();
+}
+
+// Function to handle copy button clicks
+function initializeCopyButtons() {
+  // Handle all copy buttons for breakdown cards and cover letter
+  document.querySelectorAll('[data-section] button, #coverLetterContentEl button').forEach(btn => {
+    if (btn.querySelector('.material-symbols-outlined')?.textContent === 'content_copy') {
+      btn.addEventListener('click', handleCopyClick);
+    }
+  });
+
+  // Handle JSON copy button
+  const jsonCopyBtn = document.getElementById('jsonCopyBtn');
+  if (jsonCopyBtn) {
+    jsonCopyBtn.addEventListener('click', handleCopyClick);
+  }
+
+  // Handle cover letter copy button
+  const coverLetterCopyBtn = document.querySelector('#coverLetterContentEl')?.parentElement?.querySelector('button');
+  if (coverLetterCopyBtn && coverLetterCopyBtn.querySelector('.material-symbols-outlined')?.textContent === 'content_copy') {
+    coverLetterCopyBtn.addEventListener('click', handleCopyClick);
+  }
+}
+
+// Copy handler function
+async function handleCopyClick(e) {
+  e.preventDefault();
+  const btn = this;
+  
+  let textToCopy = '';
+
+  // Check if it's the JSON button
+  if (btn.id === 'jsonCopyBtn') {
+    const jsonEl = document.getElementById('structuredJson');
+    textToCopy = jsonEl?.textContent || '';
+  }
+  // Check if it's in a breakdown card
+  else {
+    const card = btn.closest('[data-section]');
+    if (card) {
+      const contentEl = card.querySelector('.card-content');
+      if (contentEl) {
+        textToCopy = extractTextFromElement(contentEl);
+      }
+    }
+  }
+
+  if (!textToCopy || textToCopy === '{}') {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    
+    // Show feedback
+    const originalHTML = btn.innerHTML;
+    const originalClass = btn.className;
+    
+    btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span><span>Copied!</span>';
+    btn.className = 'flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-green-200 dark:bg-green-500/30 text-green-700 dark:text-green-300 text-xs font-medium transition-colors';
+    
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.className = originalClass;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy:', err);
   }
 }
 
@@ -298,14 +504,16 @@ async function startStreaming(payload) {
     });
 
     if (!res.ok) {
-      alert('Server error: ' + res.status);
+        errors.innerHTML = res;
+        errors.classList.remove('hidden');
       hideProgress();
       return;
     }
 
     reader = res.body.getReader();
   } catch (error) {
-    alert('Network error: ' + error);
+    errors.innerHTML = error;
+    errors.classList.remove('hidden');
     hideProgress();
     return;
   }
@@ -322,7 +530,7 @@ async function startStreaming(payload) {
     buf += decoder.decode(value, { stream: true });
 
     let idx;
-    while ((idx = buf.indexOf('\n\n')) !== -1) {
+    while ((idx = buf.indexOf('\n')) !== -1) {
       let chunk = buf.slice(0, idx).trim();
       buf = buf.slice(idx + 2);
 
@@ -380,17 +588,38 @@ async function startStreaming(payload) {
         setTimeout(() => {
           populateOutput(bufferedAnalysis, bufferedCoverLetter);
           progressArea.classList.add('hidden')
+          initializeCopyButtons();
           showOutput();
         }, 500);
 
       } else if (obj.type === 'error') {
-        alert('Server error: ' + (obj.message || 'Unknown'));
+        // alert('Server error: ' + (obj.message || 'Unknown'));
+        errors.innerHTML = obj.message;
+        errors.classList.remove('hidden');
         hideProgress();
         return;
 
       } else if (obj.type === 'usage') {
-        // Optional: log token usage
-        console.log('Token usage:', obj);
+        // Update token usage UI (if provided by backend)
+        try {
+          const usage = obj.usage || obj;
+          const inTokens = usage.input_tokens ?? usage.input ?? usage.inputTokens ?? 0;
+          const outTokens = usage.output_tokens ?? usage.output ?? usage.outputTokens ?? 0;
+          const totalTokens = usage.total_tokens ?? usage.total ?? usage.totalTokens ?? (Number(inTokens) + Number(outTokens));
+
+          const tokenInputEl = document.getElementById('token-input');
+          const tokenOutputEl = document.getElementById('token-output');
+          const tokenTotalEl = document.getElementById('token-total');
+          const tokenCard = document.getElementById('tokenUsageCard');
+
+          if (tokenInputEl) tokenInputEl.textContent = String(inTokens);
+          if (tokenOutputEl) tokenOutputEl.textContent = String(outTokens);
+          if (tokenTotalEl) tokenTotalEl.textContent = String(totalTokens);
+
+          if (tokenCard) tokenCard.classList.remove('hidden');
+        } catch (e) {
+          console.error('Failed to update token usage:', e);
+        }
       }
     }
   }
@@ -431,6 +660,7 @@ generateBtn.addEventListener('click', async () => {
     action: 'generate',
     client_text: text,
     context_snippets: urls,
+    selected_categories: selectedCategories,
     file_base64: fileBase64,
     file_name: filename,
     session_id: sessionId
