@@ -46,7 +46,7 @@ function resetUI() {
   finalAnalysisData = null;
   finalCoverLetterText = null;
   coverLetterContentEl.innerHTML = '<p>Loading cover letter...</p>';
-  structuredJsonEl.textContent = '';
+  // structuredJsonEl.textContent = '';
 }
 
 resetUI();
