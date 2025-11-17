@@ -1,0 +1,134 @@
+.prose-p-pre-wrap p {
+  white-space: pre-wrap;
+}
+
+/* Card */
+.cover-card {
+  background: white;
+  padding: 1.25rem; /* p-6 */
+  border-radius: 0.75rem; /* rounded-xl */
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(20, 24, 40, 0.04);
+}
+.dark .cover-card {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: #1f2937;
+}
+
+/* Header controls */
+.cover-header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+.cover-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Copy button */
+.copy-btn {
+  background: #0b74ff;
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+}
+.copy-btn:focus {
+  outline: 3px solid rgba(11, 116, 255, 0.25);
+  outline-offset: 2px;
+}
+.copy-feedback {
+  font-size: 0.875rem;
+  color: #10b981; /* green */
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.copy-feedback.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pretty prose inside card */
+.cover-body {
+  line-height: 1.6;
+  font-size: 1rem;
+  color: #0f172a;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial;
+}
+.dark .cover-body {
+  color: #e6eef8;
+}
+
+/* small note for empty state */
+.empty-note {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+            
+        body {
+            font-family: 'Manrope', 'Noto Sans', sans-serif;
+        }
+        
+        /* BEAUTIFUL SLIDE + FADE + BLUR ANIMATION */
+.output-animate {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  filter: blur(8px);
+  transition:
+      opacity 0.7s ease,
+      transform 0.7s ease,
+      filter 0.7s ease;
+}
+
+.output-animate.show {
+  opacity: 1;
+  transform: translateY(0px) scale(1);
+  filter: blur(0px);
+}
+
+.input-animate {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  filter: blur(8px);
+  transition:
+      opacity 0.7s ease,
+      transform 0.7s ease,
+      filter 0.7s ease;
+}
+
+.input-animate.show {
+  opacity: 1;
+  transform: translateY(0px) scale(1);
+  filter: blur(0px);
+}
+
+@keyframes fadeBG {
+  from { background-color: #f6f6f8; }
+  to { background-color: #ffffff; }
+}
+
+.list-item {
+  margin-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.card-content {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}

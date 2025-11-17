@@ -12,7 +12,10 @@ const addUrlBtn = document.getElementById('addUrlBtn');
 const urlList = document.getElementById('urlList');
 const fileInput = document.getElementById('fileInput');
 const generateBtn = document.getElementById('generateBtn');
+const regenerateBtn = document.getElementById('regenerate');
 const errors = document.getElementById('errors');
+const copyBtn = document.getElementById('copyCoverBtn');
+const copyFeedback = document.getElementById('copyCoverFeedback');
 
 // Progress UI
 const progressArea = document.getElementById('progressArea');
@@ -22,7 +25,7 @@ const progressText = document.getElementById('progressText');
 const subText = document.getElementById('subText');
 
 // Output Results Elements
-const coverLetterContentEl = document.querySelector('[contenteditable="true"]');
+const coverLetterContentEl = document.querySelector('#coverLetterContentEl');
 const structuredJsonEl = document.getElementById('structuredJson');
 
 // SERVER STREAM URL
@@ -50,12 +53,93 @@ function resetUI() {
   finalAnalysisData = null;
   finalCoverLetterText = null;
   coverLetterContentEl.innerHTML = '<p>Loading cover letter...</p>';
-  if(!errors.classList.contains('hidden'))
-      errors.classList.add('hidden')
+  if (!errors.classList.contains('hidden')) errors.classList.add('hidden');
   // structuredJsonEl.textContent = '';
 }
 
 resetUI();
+
+function cleanModelDividers(text) {
+  return text
+    .replace(/\r/g, '') // normalize CRLF
+    .replace(/(^|\n)\s*={3,}\s*($|\n)/g, '\n') // remove ===== lines
+    .replace(/(^|\n)\s*-{3,}\s*($|\n)/g, '\n') // remove --- lines
+    .replace(/(^|\n)\s*#{1,6}\s*OUTPUT\s*\d+.*($|\n)/gi, '\n') // remove "OUTPUT" headings
+    .trim();
+}
+
+// If the model accidentally appended JSON at the end, strip it off.
+// Heuristic: take substring from first "{" to last "}" and attempt JSON.parse;
+// if valid, remove that substring from the main text.
+function stripTrailingJsonBlock(text) {
+  const firstBrace = text.indexOf('{');
+  if (firstBrace === -1) return text;
+  const lastBrace = text.lastIndexOf('}');
+  if (lastBrace <= firstBrace) return text;
+  const candidate = text.slice(firstBrace, lastBrace + 1);
+  try {
+    JSON.parse(candidate);
+    return text.slice(0, firstBrace).trim();
+  } catch (e) {
+    return text;
+  }
+}
+
+// Render cleaned text into human-friendly paragraphs.
+function renderCoverLetter(rawContent) {
+  if (!rawContent || !rawContent.trim()) {
+    coverLetterContentEl.innerHTML =
+      '<p class="empty-note">No cover letter returned.</p>';
+    return '';
+  }
+
+  let cleaned = cleanModelDividers(rawContent);
+  cleaned = stripTrailingJsonBlock(cleaned);
+
+  // Split paragraphs on two-or-more newlines; preserve single-line breaks inside paragraphs.
+  const paragraphs = cleaned
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  // Helper: append a paragraph element that preserves single-line breaks
+  function appendParagraphWithLineBreaks(container, text) {
+    // Create <p> element
+    const pEl = document.createElement('p');
+    pEl.className = ''; // keep classes if you want: e.g., 'prose-p'
+    // Split by single newline to preserve line breaks
+    const lines = text.split('\n');
+
+    lines.forEach((line, idx) => {
+      // Create a safe text node
+      const tn = document.createTextNode(line);
+      pEl.appendChild(tn);
+
+      // If not last line, insert a <br> to preserve the newline
+      // if (idx < lines.length - 1) {
+      //   pEl.appendChild(document.createElement('br'));
+      // }
+    });
+
+    container.appendChild(pEl);
+  }
+
+  // Build DOM safely using textContent & <br> nodes for internal newlines
+  coverLetterContentEl.innerHTML = '';
+  paragraphs.forEach((para, index) => {
+    appendParagraphWithLineBreaks(coverLetterContentEl, para);
+
+    // Add TWO <br> elements between paragraphs to create a visible blank line
+    if (index < paragraphs.length - 1) {
+      coverLetterContentEl.appendChild(document.createElement('br'));
+      coverLetterContentEl.appendChild(document.createElement('br'));
+    }
+  });
+
+  // Return the full clean text to use for copying (paragraphs separated by two newlines)
+  return paragraphs.join('\n\n');
+}
+
 
 // -----------------------------------------------------
 // URL LIST MANAGEMENT
@@ -172,7 +256,9 @@ document.querySelectorAll('.category-checkbox').forEach((checkbox) => {
       }
     } else {
       // Remove from selected categories
-      selectedCategories = selectedCategories.filter(cat => cat !== e.target.value);
+      selectedCategories = selectedCategories.filter(
+        (cat) => cat !== e.target.value
+      );
     }
     console.log('Selected categories:', selectedCategories);
   });
@@ -195,34 +281,12 @@ function setProgress(pct, text = 'Processing...') {
 // -----------------------------------------------------
 // POPULATE OUTPUT SECTIONS WITH BACKEND DATA
 // -----------------------------------------------------
-function populateOutput(analysisData, coverLetterText) {
-  // 1. Display Cover Letter
-  if (coverLetterText) {
-    finalCoverLetterText = coverLetterText;
-    // Format the cover letter with paragraph tags
-    const paragraphs = coverLetterText.split('\n').filter(p => p.trim());
-    coverLetterContentEl.innerHTML = paragraphs
-      .map(para => `<br><p>${para.trim()}</p>`)
-      .join('');
-  }
-
-  // 2. Display Structured JSON
-  if (analysisData) {
-    finalAnalysisData = analysisData;
-    structuredJsonEl.textContent = JSON.stringify(analysisData, null, 2);
-  }
-
-  // 3. Populate Point-Wise Breakdown Cards
-  if (analysisData) {
-    populateBreakdownCards(analysisData);
-  }
-}
 
 // Helper function to populate the breakdown cards
 function populateBreakdownCards(data) {
   // Find and update each card based on data keys from extraction_tool.py
   console.log('[DEBUG] populateBreakdownCards received:', data);
-  
+
   if (!data) {
     console.warn('[DEBUG] No data provided to populateBreakdownCards');
     return;
@@ -237,7 +301,10 @@ function populateBreakdownCards(data) {
       const textEl = briefCard.querySelector('.card-content');
       if (textEl) textEl.textContent = data.main_objective;
       briefCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated brief-message card with:', data.main_objective.substring(0, 50));
+      console.log(
+        '[DEBUG] Populated brief-message card with:',
+        data.main_objective.substring(0, 50)
+      );
     } else {
       briefCard.classList.add('hidden');
     }
@@ -248,11 +315,10 @@ function populateBreakdownCards(data) {
   // ========================================
   const scopeCard = document.querySelector('[data-section="project-scope"]');
   if (scopeCard) {
-    if (data.project_scope && data.project_scope.trim()) {
+    if (data.experience_summary && data.experience_summary.trim()) {
       const textEl = scopeCard.querySelector('.card-content');
-      if (textEl) textEl.textContent = data.project_scope;
+      if (textEl) textEl.textContent = data.experience_summary;
       scopeCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated project-scope card with:', data.project_scope.substring(0, 50));
     } else {
       scopeCard.classList.add('hidden');
     }
@@ -263,16 +329,22 @@ function populateBreakdownCards(data) {
   // ========================================
   const techCard = document.querySelector('[data-section="required-tech"]');
   if (techCard) {
-    if (data.technologies_needed && typeof data.technologies_needed === 'object' && Object.keys(data.technologies_needed).length > 0) {
+    if (
+      data.required_technologies &&
+      typeof data.required_technologies === 'object' &&
+      Object.keys(data.required_technologies).length > 0
+    ) {
       const textEl = techCard.querySelector('.card-content');
       if (textEl) {
         let techHtml = '';
-        for (const [category, techs] of Object.entries(data.technologies_needed)) {
+        for (const [category, techs] of Object.entries(
+          data.required_technologies
+        )) {
           if (category && techs) {
             techHtml += `<div class="mb-3"><strong>${category}:</strong>`;
             techHtml += '<ul class="list-disc list-inside mt-1">';
             if (Array.isArray(techs)) {
-              techs.forEach(tech => {
+              techs.forEach((tech) => {
                 if (tech) techHtml += `<li>${tech}</li>`;
               });
             } else {
@@ -284,7 +356,6 @@ function populateBreakdownCards(data) {
         if (techHtml) textEl.innerHTML = techHtml;
       }
       techCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated required-tech card with', Object.keys(data.technologies_needed).length, 'categories');
     } else {
       techCard.classList.add('hidden');
     }
@@ -293,20 +364,32 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 4: Non-Technical Requirements
   // ========================================
-  const nonTechReqCard = document.querySelector('[data-section="non-tech-req"]');
+  const nonTechReqCard = document.querySelector(
+    '[data-section="non-tech-req"]'
+  );
   if (nonTechReqCard) {
-    if (data.non_tech_requirements && Array.isArray(data.non_tech_requirements) && data.non_tech_requirements.length > 0) {
+    if (
+      data.non_technical_requirements &&
+      Array.isArray(data.non_technical_requirements) &&
+      data.non_technical_requirements.length > 0
+    ) {
       const textEl = nonTechReqCard.querySelector('.card-content');
       if (textEl) {
-        const filteredReqs = data.non_tech_requirements.filter(req => req && req.trim());
+        const filteredReqs = data.non_technical_requirements.filter(
+          (req) => req && req.trim()
+        );
         if (filteredReqs.length > 0) {
           textEl.innerHTML = filteredReqs
-            .map(req => `<li class="list-item">${req}</li>`)
+            .map((req) => `<li class="list-item">${req}</li>`)
             .join('');
         }
       }
       nonTechReqCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated non-tech-req card with', data.non_tech_requirements.length, 'items');
+      console.log(
+        '[DEBUG] Populated non-tech-req card with',
+        data.non_technical_requirements.length,
+        'items'
+      );
     } else {
       nonTechReqCard.classList.add('hidden');
     }
@@ -317,18 +400,28 @@ function populateBreakdownCards(data) {
   // ========================================
   const unclearCard = document.querySelector('[data-section="unclear-points"]');
   if (unclearCard) {
-    if (data.clarifying_questions && Array.isArray(data.clarifying_questions) && data.clarifying_questions.length > 0) {
+    if (
+      data.clarifying_questions &&
+      Array.isArray(data.clarifying_questions) &&
+      data.clarifying_questions.length > 0
+    ) {
       const textEl = unclearCard.querySelector('.card-content');
       if (textEl) {
-        const filteredQuestions = data.clarifying_questions.filter(q => q && q.trim());
+        const filteredQuestions = data.clarifying_questions.filter(
+          (q) => q && q.trim()
+        );
         if (filteredQuestions.length > 0) {
           textEl.innerHTML = filteredQuestions
-            .map(q => `<li class="list-item">${q}</li>`)
+            .map((q) => `<li class="list-item">${q}</li>`)
             .join('');
         }
       }
       unclearCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated unclear-points card with', data.clarifying_questions.length, 'questions');
+      console.log(
+        '[DEBUG] Populated unclear-points card with',
+        data.clarifying_questions.length,
+        'questions'
+      );
     } else {
       unclearCard.classList.add('hidden');
     }
@@ -337,16 +430,25 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 6: Tool Recommendations (Technical)
   // ========================================
-  const techQuestionsCard = document.querySelector('[data-section="tech-questions"]');
+  const techQuestionsCard = document.querySelector(
+    '[data-section="tech-questions"]'
+  );
   if (techQuestionsCard) {
     let toolsHtml = '';
-    
-    if (data.tool_recommendations && typeof data.tool_recommendations === 'object' && Object.keys(data.tool_recommendations).length > 0) {
-      for (const [tool, reasoning] of Object.entries(data.tool_recommendations)) {
+
+    if (
+      data.technical_questions &&
+      typeof data.technical_questions === 'object' &&
+      Object.keys(data.technical_questions).length > 0
+    ) {
+      for (const [tool, reasoning] of Object.entries(
+        data.technical_questions
+      )) {
         if (tool && reasoning) {
           if (Array.isArray(reasoning)) {
-            reasoning.forEach(r => {
-              if (r) toolsHtml += `<li class="list-item"><strong>${tool}:</strong> ${r}</li>`;
+            reasoning.forEach((r) => {
+              if (r)
+                toolsHtml += `<li class="list-item"><strong>${tool}:</strong> ${r}</li>`;
             });
           } else {
             toolsHtml += `<li class="list-item"><strong>${tool}:</strong> ${reasoning}</li>`;
@@ -354,14 +456,16 @@ function populateBreakdownCards(data) {
         }
       }
     }
-    
+
     if (toolsHtml) {
       const textEl = techQuestionsCard.querySelector('.card-content');
       if (textEl) {
         textEl.innerHTML = toolsHtml;
       }
       techQuestionsCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated tech-questions card with tool recommendations');
+      console.log(
+        '[DEBUG] Populated tech-questions card with tool recommendations'
+      );
     } else {
       techQuestionsCard.classList.add('hidden');
     }
@@ -370,20 +474,32 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 7: Reference Sites / URLs
   // ========================================
-  const nonTechQuestionsCard = document.querySelector('[data-section="non-tech-questions"]');
+  const nonTechQuestionsCard = document.querySelector(
+    '[data-section="non-tech-questions"]'
+  );
   if (nonTechQuestionsCard) {
-    if (data.reference_sites && Array.isArray(data.reference_sites) && data.reference_sites.length > 0) {
+    if (
+      data.non_technical_questions &&
+      Array.isArray(data.non_technical_questions) &&
+      data.non_technical_questions.length > 0
+    ) {
       const textEl = nonTechQuestionsCard.querySelector('.card-content');
       if (textEl) {
-        const filteredSites = data.reference_sites.filter(site => site && site.trim());
+        const filteredSites = data.non_technical_questions.filter(
+          (site) => site && site.trim()
+        );
         if (filteredSites.length > 0) {
           textEl.innerHTML = filteredSites
-            .map(site => `<li class="list-item">${site}</li>`)
+            .map((site) => `<li class="list-item">${site}</li>`)
             .join('');
         }
       }
       nonTechQuestionsCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated non-tech-questions card with', data.reference_sites.length, 'reference sites');
+      console.log(
+        '[DEBUG] Populated non-tech-questions card with',
+        data.non_technical_questions.length,
+        'reference sites'
+      );
     } else {
       nonTechQuestionsCard.classList.add('hidden');
     }
@@ -392,13 +508,18 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 8: Important Point / Greeting
   // ========================================
-  const importantPointCard = document.querySelector('[data-section="important-point"]');
+  const importantPointCard = document.querySelector(
+    '[data-section="important-point"]'
+  );
   if (importantPointCard) {
     if (data.greeting && data.greeting.trim()) {
       const textEl = importantPointCard.querySelector('.card-content');
       if (textEl) textEl.textContent = data.greeting;
       importantPointCard.classList.remove('hidden');
-      console.log('[DEBUG] Populated important-point card with:', data.greeting.substring(0, 50));
+      console.log(
+        '[DEBUG] Populated important-point card with:',
+        data.greeting.substring(0, 50)
+      );
     } else {
       importantPointCard.classList.add('hidden');
     }
@@ -411,23 +532,30 @@ function populateBreakdownCards(data) {
 function extractTextFromElement(element) {
   const clone = element.cloneNode(true);
   const listItems = clone.querySelectorAll('.list-item');
-  
+
   if (listItems.length > 0) {
     // If there are list items, extract their text
-    return Array.from(listItems).map(li => li.textContent.trim()).join('\n');
+    return Array.from(listItems)
+      .map((li) => li.textContent.trim())
+      .join('\n');
   }
-  
+
   return clone.textContent.trim();
 }
 
 // Function to handle copy button clicks
 function initializeCopyButtons() {
   // Handle all copy buttons for breakdown cards and cover letter
-  document.querySelectorAll('[data-section] button, #coverLetterContentEl button').forEach(btn => {
-    if (btn.querySelector('.material-symbols-outlined')?.textContent === 'content_copy') {
-      btn.addEventListener('click', handleCopyClick);
-    }
-  });
+  document
+    .querySelectorAll('[data-section] button, #coverLetterContentEl button')
+    .forEach((btn) => {
+      if (
+        btn.querySelector('.material-symbols-outlined')?.textContent ===
+        'content_copy'
+      ) {
+        btn.addEventListener('click', handleCopyClick);
+      }
+    });
 
   // Handle JSON copy button
   const jsonCopyBtn = document.getElementById('jsonCopyBtn');
@@ -436,8 +564,14 @@ function initializeCopyButtons() {
   }
 
   // Handle cover letter copy button
-  const coverLetterCopyBtn = document.querySelector('#coverLetterContentEl')?.parentElement?.querySelector('button');
-  if (coverLetterCopyBtn && coverLetterCopyBtn.querySelector('.material-symbols-outlined')?.textContent === 'content_copy') {
+  const coverLetterCopyBtn = document
+    .querySelector('#coverLetterContentEl')
+    ?.parentElement?.querySelector('button');
+  if (
+    coverLetterCopyBtn &&
+    coverLetterCopyBtn.querySelector('.material-symbols-outlined')
+      ?.textContent === 'content_copy'
+  ) {
     coverLetterCopyBtn.addEventListener('click', handleCopyClick);
   }
 }
@@ -446,7 +580,7 @@ function initializeCopyButtons() {
 async function handleCopyClick(e) {
   e.preventDefault();
   const btn = this;
-  
+
   let textToCopy = '';
 
   // Check if it's the JSON button
@@ -471,14 +605,16 @@ async function handleCopyClick(e) {
 
   try {
     await navigator.clipboard.writeText(textToCopy);
-    
+
     // Show feedback
     const originalHTML = btn.innerHTML;
     const originalClass = btn.className;
-    
-    btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span><span>Copied!</span>';
-    btn.className = 'flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-green-200 dark:bg-green-500/30 text-green-700 dark:text-green-300 text-xs font-medium transition-colors';
-    
+
+    btn.innerHTML =
+      '<span class="material-symbols-outlined text-sm">check</span><span>Copied!</span>';
+    btn.className =
+      'flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-green-200 dark:bg-green-500/30 text-green-700 dark:text-green-300 text-xs font-medium transition-colors';
+
     setTimeout(() => {
       btn.innerHTML = originalHTML;
       btn.className = originalClass;
@@ -504,8 +640,8 @@ async function startStreaming(payload) {
     });
 
     if (!res.ok) {
-        errors.innerHTML = res;
-        errors.classList.remove('hidden');
+      errors.innerHTML = res;
+      errors.classList.remove('hidden');
       hideProgress();
       return;
     }
@@ -554,58 +690,55 @@ async function startStreaming(payload) {
       }
 
       // Handle different event types
-      if (obj.type === 'token' || obj.type === 'partial' || obj.type === 'partial_gen') {
+      if (
+        obj.type === 'token' ||
+        obj.type === 'partial' ||
+        obj.type === 'partial_gen'
+      ) {
         // Buffer tokens - don't display yet
         bufferedCoverLetter += obj.content || obj.token || '';
-
       } else if (obj.type === 'progress') {
         // Update progress bar
         const pct = Number(obj.percent) || 0;
         const msg = obj.message || 'Processing...';
         setProgress(pct, msg);
-
-      } else if (obj.type === 'analysis_done') {
-        // Store analysis data
-        try {
-          bufferedAnalysis = typeof obj.analysis === 'string' 
-            ? JSON.parse(obj.analysis) 
-            : obj.analysis;
-        } catch (e) {
-          console.error('Failed to parse analysis:', e);
-        }
-
       } else if (obj.type === 'cover_letter_done') {
         // Backend explicitly sends the final cover letter
-        if (obj.content) {
-          bufferedCoverLetter = obj.content;
-        }
+        renderCoverLetter(obj.content);
+      } else if (obj.type === 'structured_data') {
+        console.log('obj.data ##############', obj.data);
 
+        setTimeout(() => {
+          populateBreakdownCards(obj.data);
+        }, 500);
       } else if (obj.type === 'done' || obj.type === 'finished') {
         // Final completion event - now display everything
         setProgress(100, 'Completed!');
-        
-        // Wait a moment then show output
+
         setTimeout(() => {
-          populateOutput(bufferedAnalysis, bufferedCoverLetter);
-          progressArea.classList.add('hidden')
+          progressArea.classList.add('hidden');
           initializeCopyButtons();
           showOutput();
         }, 500);
-
       } else if (obj.type === 'error') {
         // alert('Server error: ' + (obj.message || 'Unknown'));
         errors.innerHTML = obj.message;
         errors.classList.remove('hidden');
         hideProgress();
         return;
-
       } else if (obj.type === 'usage') {
         // Update token usage UI (if provided by backend)
         try {
           const usage = obj.usage || obj;
-          const inTokens = usage.input_tokens ?? usage.input ?? usage.inputTokens ?? 0;
-          const outTokens = usage.output_tokens ?? usage.output ?? usage.outputTokens ?? 0;
-          const totalTokens = usage.total_tokens ?? usage.total ?? usage.totalTokens ?? (Number(inTokens) + Number(outTokens));
+          const inTokens =
+            usage.input_tokens ?? usage.input ?? usage.inputTokens ?? 0;
+          const outTokens =
+            usage.output_tokens ?? usage.output ?? usage.outputTokens ?? 0;
+          const totalTokens =
+            usage.total_tokens ??
+            usage.total ??
+            usage.totalTokens ??
+            Number(inTokens) + Number(outTokens);
 
           const tokenInputEl = document.getElementById('token-input');
           const tokenOutputEl = document.getElementById('token-output');
@@ -701,6 +834,7 @@ function showOutput() {
 function showInput() {
   const inputSection = document.getElementById('inputSection');
   const outputSection = document.getElementById('outputSection');
+  generateBtn.classList.remove('hidden');
 
   outputSection.classList.remove('show');
 
@@ -717,3 +851,74 @@ function showInput() {
 // Make functions globally available
 window.showInput = showInput;
 window.showOutput = showOutput;
+
+// Copy behavior using Clipboard API, with fallback
+async function copyToClipboard(text) {
+  if (!text) return false;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } else {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      return true;
+    } catch (e) {
+      document.body.removeChild(ta);
+      return false;
+    }
+  }
+}
+
+// Show temporary feedback
+function showCopyFeedback() {
+  copyFeedback.classList.add('show');
+  setTimeout(() => copyFeedback.classList.remove('show'), 1400);
+}
+
+// Wire copy button to copy the currently displayed proposal
+let lastRenderedText = '';
+copyBtn.addEventListener('click', async () => {
+  if (!lastRenderedText) {
+    // attempt to read current DOM and assemble text if needed
+    lastRenderedText = Array.from(coverLetterContentEl.querySelectorAll('p'))
+      .map((p) => p.textContent)
+      .join('\n\n');
+  }
+  const ok = await copyToClipboard(lastRenderedText);
+  if (ok) showCopyFeedback();
+  else alert('Copy failed — please select the text and copy manually.');
+});
+
+
+regenerateBtn.addEventListener('click', async () => {
+
+  const text = "Please regenerate a completely new cover letter. Use the same job description, same extracted fields, but produce a fresh, more accurate version. Do NOT repeat any previous wording. Give a new, unique human proposal + structured JSON output.";
+
+
+  let generation_mode = document.querySelector('input[name="generation-mode"]:checked').value;
+
+  const payload = {
+    generation_mode,
+    client_text: text,
+    session_id: sessionId
+  };
+
+  // Show progress and start streaming
+  generateBtn.classList.add('hidden');
+  progressArea.classList.remove('hidden');
+  setProgress(1, 'Sending to server...');
+
+  startStreaming(payload).catch((err) => {
+    console.error('streaming error', err);
+    hideProgress();
+  });
+
+  showInput()
+
+});

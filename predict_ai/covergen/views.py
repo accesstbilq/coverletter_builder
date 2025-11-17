@@ -37,9 +37,9 @@ def generate_cover_letter(request: HttpRequest):
     context_snippets = payload.get("context_snippets")
     file_base64 = payload.get("file_base64")
     file_name = payload.get("file_name")
-    
-    # ---- Implement Plan Features ----
     generation_mode = payload.get("generation_mode", "Creative") 
+    categories = payload.get("categories")
+
 
     config = {"configurable": {"thread_id": session_id}}
 
@@ -62,11 +62,12 @@ def generate_cover_letter(request: HttpRequest):
         state, 
         file_base64, 
         file_name, 
-        context_snippets
+        context_snippets,
+        categories
     )
     
     # ---- Create model with BOTH tools ----
-    model = ChatOpenAI(model="gpt-4.1-mini", max_tokens=1024, temperature=0.1)
+    model = ChatOpenAI(model="gpt-5.1", temperature=0.1)
     
     # The agent now has access to both tools
     tools = [extract_cover_letter_info, find_relevant_past_projects]
