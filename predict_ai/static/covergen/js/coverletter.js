@@ -116,9 +116,9 @@ function renderCoverLetter(rawContent) {
       pEl.appendChild(tn);
 
       // If not last line, insert a <br> to preserve the newline
-      // if (idx < lines.length - 1) {
-      //   pEl.appendChild(document.createElement('br'));
-      // }
+      if (idx < lines.length - 1) {
+        pEl.appendChild(document.createElement('br'));
+      }
     });
 
     container.appendChild(pEl);
@@ -512,13 +512,13 @@ function populateBreakdownCards(data) {
     '[data-section="important-point"]'
   );
   if (importantPointCard) {
-    if (data.greeting && data.greeting.trim()) {
+    if (data?.important_point && data?.important_point.trim()) {
       const textEl = importantPointCard.querySelector('.card-content');
-      if (textEl) textEl.textContent = data.greeting;
+      if (textEl) textEl.textContent = data.important_point;
       importantPointCard.classList.remove('hidden');
       console.log(
         '[DEBUG] Populated important-point card with:',
-        data.greeting.substring(0, 50)
+        data.important_point.substring(0, 50)
       );
     } else {
       importantPointCard.classList.add('hidden');
