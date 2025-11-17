@@ -1,225 +1,239 @@
 <!DOCTYPE html>
 <html class="light" lang="en">
-    <head>
-        {% load static %}
-        <meta charset="utf-8" />
-        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-        <title>Generate Your Cover Letter</title>
-        <script
-            src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-        <link
-            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet" />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-            rel="stylesheet" />
-            <link rel="stylesheet" href="{% static 'covergen/css/style.css' %}"></link>
 
-        <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "primary": "#135bec",
-            "background-light": "#f6f6f8",
-            "background-dark": "#101622",
-            "accent-green": "#50E3C2",
-            "text-light": "#333333",
-            "text-dark": "#f0f2f4",
-            "text-muted-light": "#616f89",
-            "text-muted-dark": "#a0aec0",
-            "container-light": "#ffffff",
-            "container-dark": "#1a202c",
-            "border-light": "#e0e0e0",
-            "border-dark": "#4a5568",
-          },
-          fontFamily: { "display": ["Manrope", "sans-serif"] },
-          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-        },
-      },
-    }
-  </script>
-    </head>
-    <body
-        class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark">
+<head>
+    {% load static %}
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Generate Your Cover Letter</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'covergen/css/style.css' %}">
+    </link>
 
-        <div id="inputSection" class="input-animate show">
-            <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
-                <div class="layout-container flex h-full grow flex-col">
-                    <div class="flex flex-1 justify-center py-5 sm:px-6 lg:px-8">
-                        <div class="layout-content-container flex flex-col w-full max-w-4xl flex-1 px-4">
-                            <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light dark:border-border-dark px-2 sm:px-6 py-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="text-primary text-2xl">
-                                        <span class="material-symbols-outlined !text-4xl" data-icon="hub">hub</span>
-                                    </div>
-                                    <h2 class="text-text-light dark:text-text-dark text-xl font-bold leading-tight tracking-[-0.015em]">CoverLetterGen</h2>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "accent-green": "#50E3C2",
+                        "text-light": "#333333",
+                        "text-dark": "#f0f2f4",
+                        "text-muted-light": "#616f89",
+                        "text-muted-dark": "#a0aec0",
+                        "container-light": "#ffffff",
+                        "container-dark": "#1a202c",
+                        "border-light": "#e0e0e0",
+                        "border-dark": "#4a5568",
+                    },
+                    fontFamily: { "display": ["Manrope", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark">
+
+    <div id="inputSection" class="input-animate show">
+        <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+            <div class="layout-container flex h-full grow flex-col">
+                <div class="flex flex-1 justify-center sm:px-6 lg:px-8">
+                    <div class="layout-content-container flex flex-col w-full max-w-7xl flex-1 px-4">
+                        <header
+                            class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light dark:border-border-dark px-2 sm:px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="text-primary text-2xl">
+                                    <span class="material-symbols-outlined !text-4xl" data-icon="hub">hub</span>
                                 </div>
-                            </header>
+                                <h2
+                                    class="text-text-light dark:text-text-dark text-xl font-bold leading-tight tracking-[-0.015em]">
+                                    CoverLetterGen</h2>
+                            </div>
+                        </header>
 
-                            <main class="flex-1 py-8">
-                                <div class="flex flex-col gap-10">
-                                    <div class="flex flex-col gap-8 rounded-xl bg-container-light dark:bg-container-dark p-6 sm:p-8 shadow-sm">
-                                        <div>
+                        <main class="flex-1 py-2">
+                            <div class="flex flex-col gap-10">
+                                <div
+                                    class="flex flex-col gap-4 rounded-xl bg-container-light dark:bg-container-dark p-3 sm:p-8 shadow-sm">
+                                    <div class="grid grid-cols-4 gap-4">
+
+                                        <div class="col-span-3">
                                             <h2 class="text-[22px] font-bold pb-3">Describe the Project</h2>
-                                            <p class="text-text-muted-light dark:text-text-muted-dark pb-3">Paste the job description or describe the client's needs in the text box below.</p>
                                             <textarea id="clientText"
-                                                class="form-input w-full min-h-[300px] rounded-lg p-[15px] text-base"
+                                                class="form-input w-full min-h-[370px] rounded-lg p-[15px] text-base"
                                                 placeholder="Paste the job description or describe the client's needs here..."></textarea>
                                         </div>
 
-                                        <div>
-                                            <h2 class="text-[22px] font-bold pb-3">Select Technology Categories</h2>
-                                            <p class="text-text-muted-light dark:text-text-muted-dark pb-3">Select one or more categories that match your expertise.</p>
-                                            <div id="categoryContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                                                <!-- Categories will be added here -->
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="wordpress" />
-                                                    <span class="text-sm font-medium">WordPress</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="nodejs" />
-                                                    <span class="text-sm font-medium">Node.js</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="reactjs" />
-                                                    <span class="text-sm font-medium">React.js</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="python" />
-                                                    <span class="text-sm font-medium">Python</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="javascript" />
-                                                    <span class="text-sm font-medium">JavaScript</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="vuejs" />
-                                                    <span class="text-sm font-medium">Vue.js</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="django" />
-                                                    <span class="text-sm font-medium">Django</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="aws" />
-                                                    <span class="text-sm font-medium">AWS</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="docker" />
-                                                    <span class="text-sm font-medium">Docker</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="git" />
-                                                    <span class="text-sm font-medium">Git</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="kubernetes" />
-                                                    <span class="text-sm font-medium">Kubernetes</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
-                                                    <input type="checkbox" class="category-checkbox" value="mongodb" />
-                                                    <span class="text-sm font-medium">MongoDB</span>
-                                                </label>
-                                            </div>
+                                        <div class="col-span-1">
+                                            <h3 class="text-[22px] font-bold pb-3">Technology Categories</h2>
+                                                <div id="categoryContainer"
+                                                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2">
+                                                    <!-- Categories will be added here -->
+                                                    <label
+                                                        class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
+                                                        <input type="checkbox" class="category-checkbox" value="CMS" />
+                                                        <span class="text-sm font-medium">CMS</span>
+                                                    </label>
+                                                    <label
+                                                        class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
+                                                        <input type="checkbox" class="category-checkbox"
+                                                            value="ecommerce" />
+                                                        <span class="text-sm font-medium">Ecommerce</span>
+                                                    </label>
+                                                    <label
+                                                        class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
+                                                        <input type="checkbox" class="category-checkbox"
+                                                            value="full stack" />
+                                                        <span class="text-sm font-medium">Full-Stack</span>
+                                                    </label>
+                                                    <label
+                                                        class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
+                                                        <input type="checkbox" class="category-checkbox"
+                                                            value="mobile app" />
+                                                        <span class="text-sm font-medium">Mobile App</span>
+                                                    </label>
+                                                    <label
+                                                        class="flex items-center gap-2 p-3 bg-background-light dark:bg-background-dark rounded-lg cursor-pointer hover:bg-primary/10 transition-colors border border-border-light dark:border-border-dark">
+                                                        <input type="checkbox" class="category-checkbox"
+                                                            value="UI Design" />
+                                                        <span class="text-sm font-medium">UI Design</span>
+                                                    </label>
+                                                </div>
                                         </div>
 
-                                        <div>
+                                        <div class="col-span-3">
                                             <h2 class="text-[22px] font-bold pb-3">Add Important Links</h2>
-                                            <p class="text-text-muted-light dark:text-text-muted-dark pb-3">Provide URLs to the job posting, client's website, or specific references.</p>
                                             <div class="flex flex-col sm:flex-row gap-3">
                                                 <input id="urlInput"
                                                     class="form-input flex-1 rounded-lg px-4 py-3 text-base"
-                                                    placeholder="https://example.com/job-posting"
-                                                    type="url" />
+                                                    placeholder="https://example.com/job-posting" type="url" />
                                                 <button id="addUrlBtn"
-                                                    class="bg-primary/20 text-primary font-semibold py-3 px-5 rounded-lg hover:bg-primary/30 transition-colors">Add URL</button>
+                                                    class="bg-primary/20 text-primary font-semibold py-3 px-5 rounded-lg hover:bg-primary/30 transition-colors">Add
+                                                    URL</button>
                                                 <label for="fileInput"
                                                     class="flex items-center gap-2 bg-primary/10 text-primary font-semibold py-3 px-4 rounded-lg cursor-pointer hover:bg-primary/20">
                                                     <span class="material-symbols-outlined">attach_file</span>
                                                     <span>Upload DOC/PDF</span>
                                                 </label>
-                                                <input id="fileInput" type="file" accept=".pdf,.docx,.doc,.txt" class="hidden" />
+                                                <input id="fileInput" type="file" accept=".pdf,.docx,.doc,.txt"
+                                                    class="hidden" />
                                             </div>
                                             <div id="urlList" class="mt-4 space-y-3"></div>
                                         </div>
 
-                                        <div class="mt-6 flex flex-col items-center gap-6">
+                                        <div class="mt-6 flex flex-col items-center gap-6 col-span-1">
                                             <button id="generateBtn"
                                                 class="w-full sm:w-auto bg-primary text-white font-bold py-4 px-10 text-lg rounded-lg hover:opacity-90 flex items-center justify-center gap-3">
                                                 <span class="material-symbols-outlined">auto_awesome</span>
                                                 <span>Generate Now</span>
                                             </button>
 
-                                            <div id="errors" class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                                                
+                                            <div id="errors"
+                                                class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+
                                             </div>
 
                                             <div class="w-full max-w-xl">
-                                                <div id="progressArea" class="hidden flex-col items-center gap-4 text-center">
+                                                <div id="progressArea"
+                                                    class="hidden flex-col items-center gap-4 text-center">
                                                     <div class="relative w-16 h-16 mx-auto">
                                                         <svg class="w-full h-full" viewBox="0 0 100 100">
-                                                            <circle class="text-border-light" cx="50" cy="50" fill="none" r="40" stroke="currentColor" stroke-width="8"></circle>
-                                                            <circle id="progressCircle" class="text-primary -rotate-90 origin-center" cx="50" cy="50" fill="none" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="62.8" stroke-linecap="round" stroke-width="8"></circle>
+                                                            <circle class="text-border-light" cx="50" cy="50"
+                                                                fill="none" r="40" stroke="currentColor"
+                                                                stroke-width="8"></circle>
+                                                            <circle id="progressCircle"
+                                                                class="text-primary -rotate-90 origin-center" cx="50"
+                                                                cy="50" fill="none" r="40" stroke="currentColor"
+                                                                stroke-dasharray="251.2" stroke-dashoffset="62.8"
+                                                                stroke-linecap="round" stroke-width="8"></circle>
                                                         </svg>
-                                                        <div id="progressPct" class="absolute inset-0 flex items-center justify-center text-primary font-bold">0%</div>
+                                                        <div id="progressPct"
+                                                            class="absolute inset-0 flex items-center justify-center text-primary font-bold">
+                                                            0%</div>
                                                     </div>
                                                     <div class="flex flex-col gap-1">
                                                         <p id="progressText" class="text-lg font-semibold">Idle</p>
-                                                        <p id="subText" class="text-sm text-text-muted-light">No active generation.</p>
+                                                        <p id="subText" class="text-sm text-text-muted-light">No active
+                                                            generation.</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+
+
+
+
+
+
                                 </div>
-                            </main>
-                        </div>
+                            </div>
+                        </main>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div id="outputSection" class="hidden output-animate">
-            <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
-                <main class="flex flex-1 justify-center py-8 px-4 sm:px-6 lg:px-8">
-                    <div class="layout-content-container flex flex-col w-full max-w-7xl">
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                            <aside class="lg:col-span-3 space-y-8 sticky top-28 self-start">
-                                <div class="bg-white dark:bg-background-dark/50 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                                    <h3 class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-2 pb-2 pt-2">Regenerate</h3>
-                                    <div class="flex px-2 py-3">
-                                        <div class="flex h-10 flex-1 items-center justify-center rounded-lg bg-background-light dark:bg-background-dark p-1">
-                                            <label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-background-dark/80 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-[#111318] dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
-                                                <span class="truncate">Creative</span>
-                                                <input checked class="invisible w-0" name="generation-mode" type="radio" value="Creative" />
-                                            </label>
-                                            <label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-background-dark/80 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-[#111318] dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
-                                                <span class="truncate">Concise</span>
-                                                <input class="invisible w-0" name="generation-mode" type="radio" value="Concise" />
-                                            </label>
-                                            <label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-background-dark/80 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-[#111318] dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
-                                                <span class="truncate">Technical</span>
-                                                <input class="invisible w-0" name="generation-mode" type="radio" value="Technical" />
-                                            </label>
-                                        </div>
+    <div id="outputSection" class="hidden output-animate">
+        <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+            <main class="flex flex-1 justify-center py-8 px-4 sm:px-6 lg:px-8">
+                <div class="layout-content-container flex flex-col w-full max-w-7xl">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <aside class="lg:col-span-3 space-y-8 sticky top-20 self-start">
+                            <div
+                                class="bg-white dark:bg-background-dark/50 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                                <h3
+                                    class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-2 pb-2 pt-2">
+                                    Regenerate</h3>
+                                <!-- <div class="flex px-2 py-3">
+                                    <div
+                                        class="flex h-10 flex-1 items-center justify-center rounded-lg bg-background-light dark:bg-background-dark p-1">
+                                        <label
+                                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-background-dark/80 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-[#111318] dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
+                                            <span class="truncate">Creative</span>
+                                            <input checked class="invisible w-0" name="generation-mode" type="radio"
+                                                value="Creative" />
+                                        </label>
+                                        <label
+                                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-background-dark/80 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-[#111318] dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
+                                            <span class="truncate">Concise</span>
+                                            <input class="invisible w-0" name="generation-mode" type="radio"
+                                                value="Concise" />
+                                        </label>
+                                        <label
+                                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-background-dark/80 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-[#111318] dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
+                                            <span class="truncate">Technical</span>
+                                            <input class="invisible w-0" name="generation-mode" type="radio"
+                                                value="Technical" />
+                                        </label>
                                     </div>
-                                    <div class="flex px-2 py-3">
-                                        <button id="regenerate" class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 flex-1 bg-primary text-white gap-2 pl-4 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
-                                            <span class="material-symbols-outlined text-base">auto_awesome</span>
-                                            <span class="truncate">Regenerate</span>
-                                        </button>
-                                    </div>
-                                    <div class="flex px-2 py-3">
-                                        <button onclick="showInput()" class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 flex-1 bg-primary text-white gap-2 pl-4 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
-                                            <span class="material-symbols-outlined text-base">edit</span>
-                                            <span class="truncate">New Generate</span>
-                                        </button>
-                                    </div>
+                                </div> -->
+                                <div class="flex px-2 py-3">
+                                    <button id="regenerate"
+                                        class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 flex-1 bg-primary text-white gap-2 pl-4 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+                                        <span class="material-symbols-outlined text-base">auto_awesome</span>
+                                        <span class="truncate">Regenerate</span>
+                                    </button>
                                 </div>
+                                <div class="flex px-2 py-3">
+                                    <button onclick="showInput()"
+                                        class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 flex-1 bg-primary text-white gap-2 pl-4 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+                                        <span class="material-symbols-outlined text-base">edit</span>
+                                        <span class="truncate">New Generate</span>
+                                    </button>
+                                </div>
+                            </div>
 
-                                <!-- <div class="bg-white dark:bg-background-dark/50 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                            <!-- <div class="bg-white dark:bg-background-dark/50 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
                                     <h3 class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-2 pb-4 pt-2">Export</h3>
                                     <div class="grid grid-cols-2 gap-3 px-2">
                                         <button class="flex items-center justify-center gap-2 rounded-lg h-10 px-3 bg-background-light dark:bg-background-dark text-sm font-medium hover:bg-gray-200/80 dark:hover:bg-gray-800/80 transition-colors">
@@ -240,28 +254,82 @@
                                         </button>
                                     </div>
                                 </div> -->
-                                
-                                <div id="tokenUsageCard" class="bg-white dark:bg-background-dark/50 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                                    <h3 class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-2 pb-4 pt-2">Token Usage</h3>
-                                    <div class="space-y-2 px-2 text-sm">
-                                        <div class="flex justify-between">
-                                            <span class="text-text-muted-light dark:text-text-muted-dark">Input Tokens:</span>
-                                            <span id="token-input" class="font-medium">0</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-text-muted-light dark:text-text-muted-dark">Output Tokens:</span>
-                                            <span id="token-output" class="font-medium">0</span>
-                                        </div>
-                                        <div class="flex justify-between border-t border-border-light dark:border-border-dark pt-2 mt-2">
-                                            <span class="font-bold">Total Tokens:</span>
-                                            <span id="token-total" class="font-bold">0</span>
-                                        </div>
+
+                            <div id="tokenUsageCard"
+                                class="bg-white dark:bg-background-dark/50 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                                <h3
+                                    class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-2 pb-4 pt-2">
+                                    Token Usage</h3>
+                                <div class="space-y-2 px-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-text-muted-light dark:text-text-muted-dark">Input
+                                            Tokens:</span>
+                                        <span id="token-input" class="font-medium">0</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-text-muted-light dark:text-text-muted-dark">Output
+                                            Tokens:</span>
+                                        <span id="token-output" class="font-medium">0</span>
+                                    </div>
+                                    <div
+                                        class="flex justify-between border-t border-border-light dark:border-border-dark pt-2 mt-2">
+                                        <span class="font-bold">Total Tokens:</span>
+                                        <span id="token-total" class="font-bold">0</span>
                                     </div>
                                 </div>
-                                </aside>
+                            </div>
 
-                            <div class="lg:col-span-9 space-y-12">
-                                <!-- <div class="space-y-6">
+                            <div data-section="non-tech-req"
+                                class="hidden p-5 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900 flex flex-col gap-3">
+                                <div class="flex justify-between items-start gap-4">
+                                    <h3 class="text-base font-bold text-orange-800 dark:text-orange-300">Non-Technical
+                                        Requirements</h3>
+                                    <button
+                                        class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-medium hover:bg-orange-200 dark:hover:bg-orange-500/30 transition-colors">
+                                        <span class="material-symbols-outlined text-sm">content_copy</span>
+                                        <span>Copy</span>
+                                    </button>
+                                </div>
+                                <ul class="card-content text-orange-700 dark:text-orange-300/80 space-y-2">
+                                    <li class="list-item">Loading...</li>
+                                </ul>
+                            </div>
+
+                            <div data-section="required-tech"
+                                class="hidden p-5 rounded-xl bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-900 flex flex-col gap-3">
+                                <div class="flex justify-between items-start gap-4">
+                                    <h3 class="text-base font-bold text-sky-800 dark:text-sky-300">Required Technologies
+                                    </h3>
+                                    <button
+                                        class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 text-xs font-medium hover:bg-sky-200 dark:hover:bg-sky-500/30 transition-colors">
+                                        <span class="material-symbols-outlined text-sm">content_copy</span>
+                                        <span>Copy</span>
+                                    </button>
+                                </div>
+                                <div class="card-content text-sky-700 dark:text-sky-300/80">
+                                    <ul class="space-y-1 list-disc list-inside">
+                                        <li>Loading...</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div data-section="important-point"
+                                class="hidden p-5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200      dark:border-blue-900 flex flex-col gap-3">
+                                <div class="flex justify-between items-start gap-4">
+                                    <h3 class="text-base font-bold text-blue-800 dark:text-blue-300">Important Point
+                                    </h3>
+                                    <button
+                                        class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors">
+                                        <span class="material-symbols-outlined text-sm">content_copy</span>
+                                        <span>Copy</span>
+                                    </button>
+                                </div>
+                                <p class="card-content text-blue-700 dark:text-blue-300/80">Loading...</p>
+                            </div>
+                        </aside>
+
+                        <div class="lg:col-span-9 space-y-12">
+                            <!-- <div class="space-y-6">
                                     <h2 class="text-2xl font-bold text-[#111318] dark:text-white">Structured Cover Letter</h2>
                                     <style>
                                         .prose-p-pre-wrap p {
@@ -273,142 +341,129 @@
                                     </div>
                                 </div> -->
 
-                                <div class="space-y-6">
-                                <h2 class="text-2xl font-bold text-[#111318] dark:text-white">Structured Cover Letter</h2>
+                            <div class="space-y-6">
+                                <h2 class="text-2xl font-bold text-[#111318] dark:text-white">Structured Cover Letter
+                                </h2>
 
-                                <div id="coverLetterCard" class="p-5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 flex flex-col gap-3">
+                                <div id="coverLetterCard"
+                                    class="overflow-auto max-h-[500px] p-5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 flex flex-col gap-3">
                                     <div class="cover-header">
 
-                                    <div class="cover-actions">
-                                        <button id="copyCoverBtn" class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-medium hover:bg-orange-200 dark:hover:bg-orange-500/30 transition-colors">
-                                            <span class="material-symbols-outlined text-sm">content_copy</span>
-                                            <span>Copy</span>
-                                        </button>
-                                        <span id="copyCoverFeedback" class="copy-feedback" role="status" aria-live="polite">Copied!</span>
-                                    </div>
+                                        <div class="cover-actions">
+                                            <button id="copyCoverBtn"
+                                                class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-medium hover:bg-orange-200 dark:hover:bg-orange-500/30 transition-colors">
+                                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                                                <span>Copy</span>
+                                            </button>
+                                            <span id="copyCoverFeedback" class="copy-feedback" role="status"
+                                                aria-live="polite">Copied!</span>
+                                        </div>
                                     </div>
 
                                     <div id="coverLetterContentEl" class="cover-body ">
-                                    <p>Loading cover letter...</p>
+                                        <p>Loading cover letter...</p>
                                     </div>
                                 </div>
-                                </div>
+                            </div>
 
 
 
-                                <div class="space-y-6">
-                                    <h2 class="text-2xl font-bold text-[#111318] dark:text-white">Point-Wise Breakdown</h2>
-                                    <div id="breakdownContainer" class="grid grid-cols-1 @lg:grid-cols-2 gap-6">
+                            <div class="space-y-6">
+                                <h2 class="text-2xl font-bold text-[#111318] dark:text-white">Point-Wise Breakdown</h2>
+                                <div id="breakdownContainer" class="grid grid-cols-1 @lg:grid-cols-2 gap-6">
 
-                                        <div data-section="important-point" class="hidden p-5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-blue-800 dark:text-blue-300">Important Point</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <p class="card-content text-blue-700 dark:text-blue-300/80">Loading...</p>
+
+
+                                    <div data-section="tech-questions"
+                                        class="hidden p-5 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-900 flex flex-col gap-3">
+                                        <div class="flex justify-between items-start gap-4">
+                                            <h3 class="text-base font-bold text-purple-800 dark:text-purple-300">
+                                                Technical Questions</h3>
+                                            <button
+                                                class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-medium hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-colors">
+                                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                                                <span>Copy</span>
+                                            </button>
                                         </div>
-
-                                        <div data-section="tech-questions" class="hidden p-5 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-purple-800 dark:text-purple-300">Technical Questions</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-medium hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <ul class="card-content text-purple-700 dark:text-purple-300/80 space-y-2">
-                                                <li class="list-item">Loading...</li>
-                                            </ul>
-                                        </div>
-
-                                        <div data-section="non-tech-questions" class="hidden p-5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-green-800 dark:text-green-300">Non-Technical Questions</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 text-xs font-medium hover:bg-green-200 dark:hover:bg-green-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <ul class="card-content text-green-700 dark:text-green-300/80 space-y-2">
-                                                <li class="list-item">Loading...</li>
-                                            </ul>
-                                        </div>
-
-                                        <div data-section="required-tech" class="hidden p-5 rounded-xl bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-sky-800 dark:text-sky-300">Required Technologies</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 text-xs font-medium hover:bg-sky-200 dark:hover:bg-sky-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <div class="card-content text-sky-700 dark:text-sky-300/80">
-                                                <ul class="space-y-1 list-disc list-inside">
-                                                    <li>Loading...</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <div data-section="non-tech-req" class="hidden p-5 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-orange-800 dark:text-orange-300">Non-Technical Requirements</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-medium hover:bg-orange-200 dark:hover:bg-orange-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <ul class="card-content text-orange-700 dark:text-orange-300/80 space-y-2">
-                                                <li class="list-item">Loading...</li>
-                                            </ul>
-                                        </div>
-
-                                        <div data-section="project-scope" class="hidden p-5 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-teal-800 dark:text-teal-300">Relevant Experience</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-medium hover:bg-teal-200 dark:hover:bg-teal-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <p class="card-content text-teal-700 dark:text-teal-300/80">Loading...</p>
-                                        </div>
-
-                                        <div data-section="unclear-points" class="hidden p-5 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-yellow-800 dark:text-yellow-300">Clarifying Questions</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 text-xs font-medium hover:bg-yellow-200 dark:hover:bg-yellow-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <ul class="card-content text-yellow-700 dark:text-yellow-300/80 space-y-2">
-                                                <li class="list-item">Loading...</li>
-                                            </ul>
-                                        </div>
-
-                                        <div data-section="brief-message" class="hidden p-5 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-900 flex flex-col gap-3">
-                                            <div class="flex justify-between items-start gap-4">
-                                                <h3 class="text-base font-bold text-rose-800 dark:text-rose-300">Main Objective</h3>
-                                                <button class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-medium hover:bg-rose-200 dark:hover:bg-rose-500/30 transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">content_copy</span>
-                                                    <span>Copy</span>
-                                                </button>
-                                            </div>
-                                            <p class="card-content text-rose-700 dark:text-rose-300/80">Loading...</p>
-                                        </div>
-
+                                        <ul class="card-content text-purple-700 dark:text-purple-300/80 space-y-2">
+                                            <li class="list-item">Loading...</li>
+                                        </ul>
                                     </div>
+
+                                    <div data-section="non-tech-questions"
+                                        class="hidden p-5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 flex flex-col gap-3">
+                                        <div class="flex justify-between items-start gap-4">
+                                            <h3 class="text-base font-bold text-green-800 dark:text-green-300">
+                                                Non-Technical Questions</h3>
+                                            <button
+                                                class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 text-xs font-medium hover:bg-green-200 dark:hover:bg-green-500/30 transition-colors">
+                                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                                                <span>Copy</span>
+                                            </button>
+                                        </div>
+                                        <ul class="card-content text-green-700 dark:text-green-300/80 space-y-2">
+                                            <li class="list-item">Loading...</li>
+                                        </ul>
+                                    </div>
+
+
+
+
+
+                                    <div data-section="project-scope"
+                                        class="hidden p-5 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-900 flex flex-col gap-3">
+                                        <div class="flex justify-between items-start gap-4">
+                                            <h3 class="text-base font-bold text-teal-800 dark:text-teal-300">Relevant
+                                                Experience</h3>
+                                            <button
+                                                class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-medium hover:bg-teal-200 dark:hover:bg-teal-500/30 transition-colors">
+                                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                                                <span>Copy</span>
+                                            </button>
+                                        </div>
+                                        <p class="card-content text-teal-700 dark:text-teal-300/80">Loading...</p>
+                                    </div>
+
+                                    <div data-section="unclear-points"
+                                        class="hidden p-5 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 flex flex-col gap-3">
+                                        <div class="flex justify-between items-start gap-4">
+                                            <h3 class="text-base font-bold text-yellow-800 dark:text-yellow-300">
+                                                Clarifying Questions</h3>
+                                            <button
+                                                class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 text-xs font-medium hover:bg-yellow-200 dark:hover:bg-yellow-500/30 transition-colors">
+                                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                                                <span>Copy</span>
+                                            </button>
+                                        </div>
+                                        <ul class="card-content text-yellow-700 dark:text-yellow-300/80 space-y-2">
+                                            <li class="list-item">Loading...</li>
+                                        </ul>
+                                    </div>
+
+                                    <div data-section="brief-message"
+                                        class="hidden p-5 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-900 flex flex-col gap-3">
+                                        <div class="flex justify-between items-start gap-4">
+                                            <h3 class="text-base font-bold text-rose-800 dark:text-rose-300">Main
+                                                Objective</h3>
+                                            <button
+                                                class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-medium hover:bg-rose-200 dark:hover:bg-rose-500/30 transition-colors">
+                                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                                                <span>Copy</span>
+                                            </button>
+                                        </div>
+                                        <p class="card-content text-rose-700 dark:text-rose-300/80">Loading...</p>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
                     </div>
-                </main>
-            </div>
+                </div>
+            </main>
         </div>
-        
-        <script src="{% static 'covergen/js/coverletter.js' %}"></script>
-        </body>
+    </div>
+
+    <script src="{% static 'covergen/js/coverletter.js' %}"></script>
+</body>
+
 </html>
