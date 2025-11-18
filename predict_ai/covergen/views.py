@@ -9,11 +9,16 @@ from langgraph.checkpoint.memory import InMemorySaver
 from .helpers.system_prompts import build_system_prompt, build_agent_prompt
 from .helpers.stream_helper import stream_generator
 from .tools.extraction_tool import extract_cover_letter_info
-from .tools.retrieval_tool import find_relevant_past_projects # <-- IMPORT NEW TOOL
+from .tools.retrieval_tool import find_relevant_past_projects
+from .middlewares.file_middleware import inject_context, state_based_output
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 import json
+from django.conf import settings
 
+
+
+CSV_FILE_PATH = settings.BASE_DIR / "active_projects_2025-11-12_15-24-13.csv"
 # LOAD ENV VARIABLE
 load_dotenv()
 
@@ -35,10 +40,9 @@ def generate_cover_letter(request: HttpRequest):
     session_id = payload.get("session_id")
     client_text = payload.get("client_text")
     context_snippets = payload.get("context_snippets")
-    file_base64 = payload.get("file_base64")
-    file_name = payload.get("file_name")
+    files = payload.get("files")
     generation_mode = payload.get("generation_mode", "Creative") 
-    categories = payload.get("categories")
+    categories = payload.get("selected_categories")
 
 
     config = {"configurable": {"thread_id": session_id}}
@@ -48,22 +52,16 @@ def generate_cover_letter(request: HttpRequest):
     
     agent_prompt = build_system_prompt(
         base_prompt=AGENT_SYSTEM_PROMPT,
-        file_name=file_name,
-        file_base64=file_base64 or "",
         generation_mode=generation_mode,
     )
 
-    state = {"data": ''}
+    state = {"categories": categories, "context_snippets": context_snippets, "uploaded_files": files}
 
     # ---- Build single agent input ----
     agent_input = build_agent_prompt(
         agent_prompt, 
         client_text, 
-        state, 
-        file_base64, 
-        file_name, 
-        context_snippets,
-        categories
+        state,
     )
     
     # ---- Create model with BOTH tools ----
@@ -72,15 +70,14 @@ def generate_cover_letter(request: HttpRequest):
     # The agent now has access to both tools
     tools = [extract_cover_letter_info, find_relevant_past_projects]
     
-    agent = create_agent(model=model, tools=tools, checkpointer=checkpointer)
+    agent = create_agent(model=model, tools=tools, middleware=[inject_context, state_based_output], checkpointer=checkpointer)
 
     # ---- Streaming response with dual output ----
     response = StreamingHttpResponse(
         stream_generator(
             agent=agent,
-            agent_input=agent_input, # Pass the single input
+            agent_input=agent_input,
             config=config
-            # No longer need extraction_input
         ),
         content_type="text/event-stream",
         charset="utf-8",

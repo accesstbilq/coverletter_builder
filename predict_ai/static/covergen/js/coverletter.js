@@ -23,6 +23,7 @@ const progressPct = document.getElementById('progressPct');
 const progressCircle = document.getElementById('progressCircle');
 const progressText = document.getElementById('progressText');
 const subText = document.getElementById('subText');
+const progressOverlay = document.getElementById('progressOverlay');
 
 // Output Results Elements
 const coverLetterContentEl = document.querySelector('#coverLetterContentEl');
@@ -46,6 +47,7 @@ function hideProgress() {
   progressArea.classList.add('hidden');
   progressPct.textContent = '0%';
   progressCircle.style.strokeDashoffset = '251.2';
+  progressOverlay.classList.add('hidden');
 }
 
 function resetUI() {
@@ -132,14 +134,13 @@ function renderCoverLetter(rawContent) {
     // Add TWO <br> elements between paragraphs to create a visible blank line
     if (index < paragraphs.length - 1) {
       coverLetterContentEl.appendChild(document.createElement('br'));
-      coverLetterContentEl.appendChild(document.createElement('br'));
+      // coverLetterContentEl.appendChild(document.createElement('br'));
     }
   });
 
   // Return the full clean text to use for copying (paragraphs separated by two newlines)
   return paragraphs.join('\n\n');
 }
-
 
 // -----------------------------------------------------
 // URL LIST MANAGEMENT
@@ -199,8 +200,10 @@ addUrlBtn.addEventListener('click', () => {
 let selectedFile = null;
 
 fileInput.addEventListener('change', (ev) => {
-  const f = ev.target.files[0];
-  if (!f) return;
+  const files = ev.target.files;
+  if (!files || files.length === 0) return;
+
+  const f = files[0]; // Get the actual file object
 
   if (f.size > MAX_FILE_SIZE_BYTES) {
     alert('File too large. Max 10MB allowed.');
@@ -208,7 +211,19 @@ fileInput.addEventListener('change', (ev) => {
     return;
   }
 
-  selectedFile = f;
+  // 2. Type Validation (PDF and Text)
+  // Check for PDF specific MIME, generic text MIME, or common text-based extensions
+  const isPdf = f.type === 'application/pdf';
+  const isText = f.type.startsWith('text/') || 
+                 /\.(txt|md|csv|json|js|py|html|css|xml|log|ini|yaml|yml|rb|c|cpp|h)$/i.test(f.name);
+
+  if (!isPdf && !isText) {
+    alert('Invalid file type. Please upload a PDF or a Text file.');
+    fileInput.value = ''; // Clear the invalid selection
+    return;
+  }
+
+  selectedFile = files;
 
   const fileCard = document.createElement('div');
   fileCard.className =
@@ -276,6 +291,18 @@ function setProgress(pct, text = 'Processing...') {
 
   const dashOffset = 251.2 * (1 - pct / 100);
   progressCircle.style.strokeDashoffset = dashOffset;
+
+  const circle = document.getElementById('progressCircle1');
+  const pctText = document.getElementById('progressPct1');
+  const progressText1 = document.getElementById('progressText1');
+  const subTextEl = document.getElementById('subText1');
+
+  circle.style.strokeDashoffset = dashOffset;
+  pctText.textContent = pct + '%';
+  progressText1.textContent = subText;
+  subTextEl.textContent = text || 'Please wait...';
+
+  progressOverlay.classList.remove('hidden');
 }
 
 // -----------------------------------------------------
@@ -717,6 +744,7 @@ async function startStreaming(payload) {
 
         setTimeout(() => {
           progressArea.classList.add('hidden');
+          document.getElementById('progressOverlay').classList.add('hidden');
           initializeCopyButtons();
           showOutput();
         }, 500);
@@ -725,6 +753,7 @@ async function startStreaming(payload) {
         errors.innerHTML = obj.message;
         errors.classList.remove('hidden');
         hideProgress();
+        document.getElementById('progressOverlay').classList.add('hidden');
         return;
       } else if (obj.type === 'usage') {
         // Update token usage UI (if provided by backend)
@@ -789,17 +818,16 @@ generateBtn.addEventListener('click', async () => {
     fileBase64 = btoa(binary);
   }
 
+
   const payload = {
     action: 'generate',
     client_text: text,
     context_snippets: urls,
     selected_categories: selectedCategories,
-    file_base64: fileBase64,
-    file_name: filename,
+    files: selectedFile,
     session_id: sessionId
   };
 
-  // Show progress and start streaming
   progressArea.classList.remove('hidden');
   setProgress(1, 'Sending to server...');
 
@@ -810,11 +838,11 @@ generateBtn.addEventListener('click', async () => {
 });
 
 // Optional: Ctrl+Enter to trigger generation
-clientText.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && e.key === 'Enter') {
-    generateBtn.click();
-  }
-});
+// clientText.addEventListener('keydown', (e) => {
+//   if (e.ctrlKey && e.key === 'Enter') {
+//     generateBtn.click();
+//   }
+// });
 
 // -----------------------------------------------------
 // SECTION VISIBILITY/NAVIGATION
@@ -829,9 +857,23 @@ function showOutput() {
   requestAnimationFrame(() => {
     outputSection.classList.add('show');
   });
+
+  // Smooth scroll to the very top
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
 }
 
 function showInput() {
+  clientText.value = '';
+  urlList.innerHTML = '';
+  document.querySelectorAll('.category-checkbox').forEach((checkbox) => {
+    checkbox.checked = false;
+  })
+  selectedCategories = [];
+  selectedFile = null;
+
   const inputSection = document.getElementById('inputSection');
   const outputSection = document.getElementById('outputSection');
   generateBtn.classList.remove('hidden');
@@ -846,6 +888,11 @@ function showInput() {
       inputSection.classList.add('show');
     });
   }, 200);
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
 }
 
 // Make functions globally available
@@ -895,30 +942,87 @@ copyBtn.addEventListener('click', async () => {
   else alert('Copy failed — please select the text and copy manually.');
 });
 
-
 regenerateBtn.addEventListener('click', async () => {
+  const text =
+    'regenerate a completely new cover letter. Use the same job description, same extracted fields, but produce a fresh, more accurate version. Do NOT repeat any previous wording. Give a new, unique human proposal + structured JSON output.';
 
-  const text = "Please regenerate a completely new cover letter. Use the same job description, same extracted fields, but produce a fresh, more accurate version. Do NOT repeat any previous wording. Give a new, unique human proposal + structured JSON output.";
-
-
-  let generation_mode = document.querySelector('input[name="generation-mode"]:checked').value;
+  // let generation_mode = document.querySelector('input[name="generation-mode"]:checked').value;
 
   const payload = {
-    generation_mode,
+    // generation_mode,
     client_text: text,
     session_id: sessionId
   };
 
-  // Show progress and start streaming
-  generateBtn.classList.add('hidden');
-  progressArea.classList.remove('hidden');
-  setProgress(1, 'Sending to server...');
+  document.getElementById('progressOverlay').classList.remove('hidden');
 
   startStreaming(payload).catch((err) => {
     console.error('streaming error', err);
-    hideProgress();
+    document.getElementById('progressOverlay').classList.add('hidden');
   });
-
-  showInput()
-
 });
+
+/**
+ * Helper Function: Determine file type and extract text
+ */
+async function getFileContentSnippet(file) {
+  console.log('Processing file:', file);
+  try {
+    if (file.type === 'application/pdf') {
+      return await extractPdfText(file);
+    } else if (
+      file.type.startsWith('text/') ||
+      file.name.match(/\.(md|json|js|py|txt|csv)$/i)
+    ) {
+      return await readTextFile(file);
+    } else {
+      return `[Binary file: ${file.type} - content cannot be read by frontend]`;
+    }
+  } catch (error) {
+    console.error('Error processing file:', file.name, error);
+    return 'Error extracting content.';
+  }
+}
+
+/**
+ * Helper: Read standard text files
+ */
+function readTextFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    // Read file as text
+    reader.onload = (e) => {
+      const text = e.target.result;
+      // Limit to 1500 chars to avoid blowing up the token limit
+      resolve(text.slice(0, 1500) + (text.length > 1500 ? '...' : ''));
+    };
+    reader.onerror = (e) => reject(e);
+    reader.readAsText(file);
+  });
+}
+
+/**
+ * Helper: Extract text from PDF using pdfjs-dist
+ */
+async function extractPdfText(file) {
+  if (typeof pdfjsLib === 'undefined') {
+    console.warn('pdfjs-dist not found. Cannot extract PDF text.');
+    return 'PDF content (parser not loaded).';
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  let fullText = '';
+  // Only read the first 3 pages to keep it fast and light
+  const maxPages = Math.min(pdf.numPages, 3);
+
+  for (let i = 1; i <= maxPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map((item) => item.str).join(' ');
+    fullText += `[Page ${i}] ${pageText}\n`;
+  }
+
+  return fullText.slice(0, 1500) + ' ...';
+}
