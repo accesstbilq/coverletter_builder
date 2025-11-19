@@ -331,70 +331,101 @@ def stream_generator(
                 print(f"[DEBUG] Error extracting from state: {e}")
 
         # ============================================
-        # PARSE RESPONSE INTO COVER LETTER & BREAKDOWN
+        # PARSE RESPONSE INTO COVER LETTER & STRUCTURED DATA
         # ============================================
-        cover_letter_text = ""
+        cover_letter_only = ""
+
         if full_response_text:
+            # 1) First try: treat the entire response as JSON (structured output case)
+            parsed_top = None
             try:
-                parsed_json, json_start, json_end = extract_json_and_span(full_response_text)
+                parsed_top = json.loads(full_response_text)
+            except Exception:
+                parsed_top = None
+
+            if isinstance(parsed_top, dict) and (
+                "human_proposal_text" in parsed_top or "structured_data" in parsed_top
+            ):
+                # This is the UpworkResponse-style JSON:
+                # {
+                #   "human_proposal_text": "...",
+                #   "structured_data": { ... }
+                # }
+
+                cover_letter_only = parsed_top.get("human_proposal_text", "") or ""
+                structured = parsed_top.get("structured_data", {}) or {}
 
                 # Emit structured JSON as its own event
-                print("[DEBUG] Emitting structured_data event with parsed JSON")
+                print("[DEBUG] Emitting structured_data event from top-level JSON")
                 yield emit_sse({
                     "type": "structured_data",
-                    "data": parsed_json
+                    "data": structured
                 })
 
-                # Now remove the JSON part and any trailing "OUTPUT 2" markers from cover letter text
-                cover_letter_only = full_response_text[:json_start]
-
-                # Heuristics to clean trailing separators / headers commonly present in the model output:
-                # - Remove lines that contain "====", "OUTPUT 2", "OUTPUT 1 — JSON", "### OUTPUT 2", or "### **OUTPUT 2**"
-                # - Trim trailing whitespace/newlines
-                import re
-                # Remove common divider lines and OUTPUT 2 headers from the end of cover_letter_only
-                cover_letter_only = re.sub(r"(?s)\n\s*={3,}\s*$", "\n", cover_letter_only)       # trailing ===== lines
-                cover_letter_only = re.sub(r"(?i)\n\s*###?\s*\**OUTPUT\s*2.*$", "\n", cover_letter_only)  # trailing '### OUTPUT 2' headers
-                cover_letter_only = re.sub(r"(?i)\n\s*###?\s*\**OUTPUT\s*1.*$", "\n", cover_letter_only)  # sometimes model includes both headings
-                cover_letter_only = re.sub(r"(?s)\n\s*[\-*_]{3,}\s*$", "\n", cover_letter_only)   # trailing --- or ___ etc
-                cover_letter_only = cover_letter_only.rstrip()  # final trim
-
-                # If after trimming cover_letter_only is empty, fallback to full_response_text (so we don't emit nothing)
+                # Fallback if somehow proposal is empty
                 if not cover_letter_only.strip():
-                    print("[DEBUG] cover_letter_only empty after trimming; falling back to full_response_text")
+                    print("[DEBUG] Empty human_proposal_text, falling back to full_response_text")
                     cover_letter_only = full_response_text
 
-            except JSONExtractionError as jde:
-                # Parsing failed: emit a structured_data_failed event and send full response as cover letter
-                print(f"[DEBUG] structured JSON extraction failed: {jde}")
-                candidate = ""
+            else:
+                # 2) Fallback: old behavior — cover letter + JSON embedded in text
                 try:
-                    first_brace = full_response_text.find("{")
-                    if first_brace != -1:
-                        candidate = full_response_text[first_brace:first_brace + 4000]
-                except Exception:
+                    parsed_json, json_start, json_end = extract_json_and_span(full_response_text)
+
+                    # Emit structured JSON as its own event
+                    print("[DEBUG] Emitting structured_data event with parsed JSON from embedded block")
+                    yield emit_sse({
+                        "type": "structured_data",
+                        "data": parsed_json
+                    })
+
+                    # Remove JSON block from the end of the response to get clean cover letter
+                    cover_letter_only = full_response_text[:json_start]
+
+                    # Heuristics to clean trailing separators / headers
+                    import re
+                    cover_letter_only = re.sub(r"(?s)\n\s*={3,}\s*$", "\n", cover_letter_only)  # trailing =====
+                    cover_letter_only = re.sub(r"(?i)\n\s*###?\s*\**OUTPUT\s*2.*$", "\n", cover_letter_only)
+                    cover_letter_only = re.sub(r"(?i)\n\s*###?\s*\**OUTPUT\s*1.*$", "\n", cover_letter_only)
+                    cover_letter_only = re.sub(r"(?s)\n\s*[\-*_]{3,}\s*$", "\n", cover_letter_only)
+                    cover_letter_only = cover_letter_only.rstrip()
+
+                    if not cover_letter_only.strip():
+                        print("[DEBUG] cover_letter_only empty after trimming; falling back to full_response_text")
+                        cover_letter_only = full_response_text
+
+                except JSONExtractionError as jde:
+                    # Parsing failed: emit a structured_data_failed event and send full response as cover letter
+                    print(f"[DEBUG] structured JSON extraction failed: {jde}")
                     candidate = ""
+                    try:
+                        first_brace = full_response_text.find("{")
+                        if first_brace != -1:
+                            candidate = full_response_text[first_brace:first_brace + 4000]
+                    except Exception:
+                        candidate = ""
 
-                yield emit_sse({
-                    "type": "structured_data_failed",
-                    "error": str(jde),
-                    "candidate": candidate[:2000]
-                })
+                    yield emit_sse({
+                        "type": "structured_data_failed",
+                        "error": str(jde),
+                        "candidate": candidate[:2000]
+                    })
 
-                cover_letter_only = full_response_text
+                    cover_letter_only = full_response_text
 
-            except Exception as e:
-                # Unexpected error during extraction
-                print(f"[DEBUG] Unexpected error extracting structured JSON: {e}")
-                yield emit_sse({
-                    "type": "structured_data_failed",
-                    "error": "unexpected error: " + str(e),
-                    "candidate": ""
-                })
-                cover_letter_only = full_response_text
+                except Exception as e:
+                    # Unexpected error during extraction
+                    print(f"[DEBUG] Unexpected error extracting structured JSON: {e}")
+                    yield emit_sse({
+                        "type": "structured_data_failed",
+                        "error": "unexpected error: " + str(e),
+                        "candidate": ""
+                    })
+                    cover_letter_only = full_response_text
         else:
             print("[DEBUG] No full_response_text to parse for structured JSON")
             cover_letter_only = full_response_text
+
 
         # Emit final cover letter using cover_letter_only (this will not include the JSON block)
         if cover_letter_only:
@@ -421,16 +452,6 @@ def stream_generator(
         else:
             print("[DEBUG] WARNING: No breakdown data to send!")
 
-
-        # Emit final cover letter
-        if cover_letter_text:
-            print(f"[DEBUG] Emitting cover_letter_done with {len(cover_letter_text)} chars")
-            yield emit_sse({
-                "type": "cover_letter_done",
-                "content": cover_letter_text
-            })
-        else:
-            print("[DEBUG] WARNING: No cover letter text to send!")
 
         # Emit done event
         yield emit_sse({"type": "done"})

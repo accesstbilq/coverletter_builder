@@ -40,7 +40,7 @@ def generate_cover_letter(request: HttpRequest):
     client_text = payload.get("client_text")
     context_snippets = payload.get("context_snippets")
     # files = payload.get("files")
-    generation_mode = payload.get("generation_mode", "Creative") 
+    generation_mode = payload.get("generation_mode", "Professional") 
     categories = payload.get("selected_categories")
     base64_string = payload.get("base64_string")
     file_name = payload.get("file_name")

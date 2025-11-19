@@ -6,6 +6,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Generate Your Cover Letter</title>
+    <link rel="icon" href="{% static 'covergen/images/icons8-favicon-100.png' %}" type="image/x-icon">
     <script src="{% static 'covergen/js/tailwind.min.js' %}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
@@ -42,6 +43,41 @@
 
 <body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark">
 
+    <div id="progressOverlay"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        
+        <div class="w-full max-w-xl px-6">
+            <div id="progressArea"
+                class="flex flex-col items-center gap-6 text-center bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-10 animate-in fade-in zoom-in-95 duration-300">
+                
+                <div class="relative w-20 h-20 mx-auto">
+                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                        <circle class="text-gray-200 dark:text-gray-700" cx="50" cy="50"
+                            fill="none" r="40" stroke="currentColor"
+                            stroke-width="10"></circle>
+                        <circle id="progressCircle1"
+                            class="text-primary -rotate-90 origin-center transition-all duration-300"
+                            cx="50" cy="50" fill="none" r="40" stroke="currentColor"
+                            stroke-dasharray="251.2" stroke-dashoffset="251.2"
+                            stroke-linecap="round" stroke-width="10"></circle>
+                    </svg>
+                    <div id="progressPct1"
+                        class="absolute inset-0 flex items-center justify-center text-2xl font-bold text-primary">
+                        0%</div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <p id="progressText1" class="text-2xl font-semibold text-gray-900 dark:text-white">
+                        Loading...
+                    </p>
+                    <p id="subText1" class="text-sm text-gray-500 dark:text-gray-400">
+                        No active generation.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="inputSection" class="input-animate show">
         <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
             <div class="layout-container flex h-full grow flex-col">
@@ -72,7 +108,7 @@
                                                 placeholder="Paste the job description or describe the client's needs here..."></textarea>
                                         </div>
 
-                                        <div class="col-span-1">
+                                        <div class="col-span-1 relative">
                                             <h3 class="text-[22px] font-bold pb-3">Technology Categories</h2>
                                                 <div id="categoryContainer"
                                                     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2">
@@ -107,8 +143,19 @@
                                                         <span class="text-sm font-medium">UI Design</span>
                                                     </label>
                                                 </div>
-                                        </div>
 
+                                            <div class="mt-6 flex flex-col items-center gap-6 col-span-1 absolute bottom-0 right-0">
+                                            <button id="generateBtn"
+                                                class="w-full sm:w-auto bg-primary text-white font-bold py-4 px-10 text-lg rounded-lg hover:opacity-90 flex items-center justify-center gap-3">
+                                                <span class="material-symbols-outlined">auto_awesome</span>
+                                                <span>Generate Now</span>
+                                            </button>
+
+                                            <div id="errors"
+                                                class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                                            </div>
+                                        </div>
+                                        </div>
                                         <div class="col-span-3">
                                             <h2 class="text-[22px] font-bold pb-3">Add Important Links</h2>
                                             <div class="flex flex-col sm:flex-row gap-3">
@@ -128,45 +175,6 @@
                                             </div>
                                             <div id="urlList" class="mt-4 space-y-3"></div>
                                         </div>
-
-                                        <div class="mt-6 flex flex-col items-center gap-6 col-span-1">
-                                            <button id="generateBtn"
-                                                class="w-full sm:w-auto bg-primary text-white font-bold py-4 px-10 text-lg rounded-lg hover:opacity-90 flex items-center justify-center gap-3">
-                                                <span class="material-symbols-outlined">auto_awesome</span>
-                                                <span>Generate Now</span>
-                                            </button>
-
-                                            <div id="errors"
-                                                class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-
-                                            </div>
-
-                                            <div class="w-full max-w-xl">
-                                                <div id="progressArea"
-                                                    class="hidden flex-col items-center gap-4 text-center">
-                                                    <div class="relative w-16 h-16 mx-auto">
-                                                        <svg class="w-full h-full" viewBox="0 0 100 100">
-                                                            <circle class="text-border-light" cx="50" cy="50"
-                                                                fill="none" r="40" stroke="currentColor"
-                                                                stroke-width="8"></circle>
-                                                            <circle id="progressCircle"
-                                                                class="text-primary -rotate-90 origin-center" cx="50"
-                                                                cy="50" fill="none" r="40" stroke="currentColor"
-                                                                stroke-dasharray="251.2" stroke-dashoffset="62.8"
-                                                                stroke-linecap="round" stroke-width="8"></circle>
-                                                        </svg>
-                                                        <div id="progressPct"
-                                                            class="absolute inset-0 flex items-center justify-center text-primary font-bold">
-                                                            0%</div>
-                                                    </div>
-                                                    <div class="flex flex-col gap-1">
-                                                        <p id="progressText" class="text-lg font-semibold">Idle</p>
-                                                        <p id="subText" class="text-sm text-text-muted-light">No active
-                                                            generation.</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -178,41 +186,6 @@
     </div>
 
     <div id="outputSection" class="hidden output-animate">
-        <!-- Full-screen overlay with blur + centered progress -->
-<div id="progressOverlay"
-    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-    
-    <div class="w-full max-w-xl px-6">
-        <div id="progressArea"
-            class="flex flex-col items-center gap-6 text-center bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-10 animate-in fade-in zoom-in-95 duration-300">
-            
-            <div class="relative w-20 h-20 mx-auto">
-                <svg class="w-full h-full" viewBox="0 0 100 100">
-                    <circle class="text-gray-200 dark:text-gray-700" cx="50" cy="50"
-                        fill="none" r="40" stroke="currentColor"
-                        stroke-width="10"></circle>
-                    <circle id="progressCircle1"
-                        class="text-primary -rotate-90 origin-center transition-all duration-300"
-                        cx="50" cy="50" fill="none" r="40" stroke="currentColor"
-                        stroke-dasharray="251.2" stroke-dashoffset="251.2"
-                        stroke-linecap="round" stroke-width="10"></circle>
-                </svg>
-                <div id="progressPct1"
-                    class="absolute inset-0 flex items-center justify-center text-2xl font-bold text-primary">
-                    0%</div>
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <p id="progressText1" class="text-2xl font-semibold text-gray-900 dark:text-white">
-                    Loading...
-                </p>
-                <p id="subText1" class="text-sm text-gray-500 dark:text-gray-400">
-                    Please wait while we import your products
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
         <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
             <main class="flex flex-1 justify-center py-8 px-4 sm:px-6 lg:px-8">
                 <div class="layout-content-container flex flex-col w-full max-w-7xl">

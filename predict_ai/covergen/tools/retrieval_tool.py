@@ -1,20 +1,18 @@
-# predict_ai/covergen/tools/retrieval_tool.py
-
+from ..rag_vectors import get_project_retriever
 from langchain_core.tools import tool
-from ..rag_setup import get_project_retriever
-from langchain_core.documents import Document
 
 @tool
 def find_relevant_past_projects(query: str) -> str:
     """
-    Searches the company's past project database (a CSV) to find projects
-    relevant to the user's query (e.g., "Shopify plugin for subscriptions").
-    Returns a formatted string of the top 3 matches.
+    Search the stored project vectors for projects relevant to the query.
+    Returns a concise formatted string of the top 3 most relevant matches
+    (URL + short summary) for the agent to use.
     """
     print(f"--- RAG Tool Called with Query: {query} ---")
-    retriever = get_project_retriever()
     
     try:
+        retriever = get_project_retriever()
+        # Retriever already handles similarity search.
         retrieved_docs = retriever.invoke(query)
     except Exception as e:
         return f"Error while retrieving projects: {e}"
@@ -22,19 +20,33 @@ def find_relevant_past_projects(query: str) -> str:
     if not retrieved_docs:
         return "No relevant past projects found in the database."
 
-    # Format the results into a clean string for the LLM
-    formatted_results = []
-    for i, doc in enumerate(retrieved_docs):
-        url = doc.metadata.get('Project_URL', 'N/A')
-        categories = doc.metadata.get('Categories', 'N/A')
-        tech = doc.metadata.get('Technology', 'N/A')
-        
-        formatted_results.append(
-            f"Result {i+1}:\n"
-            f"- Project URL: {url}\n"
-            f"- Categories: {categories}\n"
-            f"- Technology: {tech}\n"
-        )
+    # Only keep the top 3 results to avoid noise
+    top_docs = retrieved_docs[:3]
 
-    print(f"--- RAG Tool Found {len(retrieved_docs)} Projects ---")
-    return "\n---\n".join(formatted_results)
+    formatted_results = []
+    for i, doc in enumerate(top_docs, start=1):
+        content = (doc.page_content or "").strip()
+
+        # Try to extract URL from the content if you embed it like "URL: https://..."
+        url = None
+        for segment in content.split(" | "):
+            seg = segment.strip()
+            if seg.lower().startswith("url:"):
+                url = seg[4:].strip()
+                break
+
+        # Shorten very long text – we just want a compact summary for the agent
+        max_len = 600
+        if len(content) > max_len:
+            content = content[:max_len].rsplit(" ", 1)[0] + "..."
+
+        parts = [f"Result {i}:"]
+        if url:
+            parts.append(f"- URL: {url}")
+        parts.append(f"- Summary: {content}")
+
+        formatted_results.append("\n".join(parts))
+
+    print(f"--- RAG Tool Returned {len(top_docs)} Relevant Projects ---")
+    print(top_docs)
+    return "\n\n---\n\n".join(formatted_results)

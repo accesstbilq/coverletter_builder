@@ -18,7 +18,6 @@ const copyBtn = document.getElementById('copyCoverBtn');
 const copyFeedback = document.getElementById('copyCoverFeedback');
 
 // Progress UI
-const progressArea = document.getElementById('progressArea');
 const progressPct = document.getElementById('progressPct');
 const progressCircle = document.getElementById('progressCircle');
 const progressText = document.getElementById('progressText');
@@ -45,10 +44,8 @@ let selectedCategories = [];
 // -----------------------------------------------------
 function hideProgress() {
   generateBtn.disabled = false;
-  progressArea.classList.add('hidden');
-  progressPct.textContent = '0%';
-  progressCircle.style.strokeDashoffset = '251.2';
   progressOverlay.classList.add('hidden');
+  document.body.classList.remove('overflow-hidden');
 }
 
 function resetUI() {
@@ -284,16 +281,10 @@ document.querySelectorAll('.category-checkbox').forEach((checkbox) => {
 // PROGRESS UI
 // -----------------------------------------------------
 function setProgress(pct, text = 'Processing...') {
+  document.body.classList.add('overflow-hidden');
   generateBtn.disabled = true;
-  progressArea.classList.remove('hidden');
-  pct = Math.max(0, Math.min(100, pct));
-
-  progressPct.textContent = pct + '%';
-  progressText.textContent = text;
 
   const dashOffset = 251.2 * (1 - pct / 100);
-  progressCircle.style.strokeDashoffset = dashOffset;
-
   const circle = document.getElementById('progressCircle1');
   const pctText = document.getElementById('progressPct1');
   const progressText1 = document.getElementById('progressText1');
@@ -301,8 +292,7 @@ function setProgress(pct, text = 'Processing...') {
 
   circle.style.strokeDashoffset = dashOffset;
   pctText.textContent = pct + '%';
-  progressText1.textContent = subText;
-  subTextEl.textContent = text || 'Please wait...';
+  progressText1.textContent = text;
 
   progressOverlay.classList.remove('hidden');
 }
@@ -829,8 +819,8 @@ async function startStreaming(payload) {
         setProgress(100, 'Completed!');
 
         setTimeout(() => {
-          progressArea.classList.add('hidden');
           document.getElementById('progressOverlay').classList.add('hidden');
+          document.body.classList.remove('overflow-hidden');
           initializeCopyButtons();
           showOutput();
         }, 500);
@@ -917,7 +907,6 @@ generateBtn.addEventListener('click', async () => {
     filename: filename
   };
 
-  progressArea.classList.remove('hidden');
   setProgress(1, 'Sending to server...');
 
   startStreaming(payload).catch((err) => {
@@ -937,6 +926,7 @@ generateBtn.addEventListener('click', async () => {
 // SECTION VISIBILITY/NAVIGATION
 // -----------------------------------------------------
 function showOutput() {
+  document.body.classList.remove('overflow-hidden');
   const inputSection = document.getElementById('inputSection');
   const outputSection = document.getElementById('outputSection');
 
