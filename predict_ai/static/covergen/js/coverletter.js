@@ -44,6 +44,7 @@ let selectedCategories = [];
 // INITIAL UI SETUP
 // -----------------------------------------------------
 function hideProgress() {
+  generateBtn.disabled = false;
   progressArea.classList.add('hidden');
   progressPct.textContent = '0%';
   progressCircle.style.strokeDashoffset = '251.2';
@@ -223,7 +224,7 @@ fileInput.addEventListener('change', (ev) => {
     return;
   }
 
-  selectedFile = files;
+  selectedFile = f;
 
   const fileCard = document.createElement('div');
   fileCard.className =
@@ -283,6 +284,7 @@ document.querySelectorAll('.category-checkbox').forEach((checkbox) => {
 // PROGRESS UI
 // -----------------------------------------------------
 function setProgress(pct, text = 'Processing...') {
+  generateBtn.disabled = true;
   progressArea.classList.remove('hidden');
   pct = Math.max(0, Math.min(100, pct));
 
@@ -460,6 +462,7 @@ function populateBreakdownCards(data) {
   const techQuestionsCard = document.querySelector(
     '[data-section="tech-questions"]'
   );
+
   if (techQuestionsCard) {
     let toolsHtml = '';
 
@@ -551,6 +554,88 @@ function populateBreakdownCards(data) {
       importantPointCard.classList.add('hidden');
     }
   }
+
+
+const Recommendations = document.querySelector(
+  '[data-section="recommendations"]'
+);
+
+if (Recommendations) {
+  const recs = data.recommendations;
+
+  // Must be a non-null object with at least one key
+  if (recs && typeof recs === 'object' && Object.keys(recs).length > 0) {
+    const textEl = Recommendations.querySelector('.card-content');
+
+    if (textEl) {
+      const sections = Object.entries(recs)
+        .map(([category, items]) => {
+          if (!Array.isArray(items)) return '';
+
+          const cleaned = items.filter((item) => item && item.trim());
+          if (cleaned.length === 0) return '';
+
+          return `
+            <div class="mb-3">
+              <div class="font-semibold mb-1">${category}</div>
+              <ul class="list-disc list-inside">
+                ${cleaned
+                  .map((item) => `<li class="list-item">${item}</li>`)
+                  .join('')}
+              </ul>
+            </div>
+          `;
+        })
+        .filter(Boolean) // remove empty strings
+        .join('');
+
+      if (sections.trim()) {
+        textEl.innerHTML = sections;
+        Recommendations.classList.remove('hidden');
+        console.log(
+          '[DEBUG] Populated recommendations card with categories:',
+          Object.keys(recs)
+        );
+      } else {
+        Recommendations.classList.add('hidden');
+      }
+    }
+  } else {
+    Recommendations.classList.add('hidden');
+  }
+}
+
+const refrenceWeb = document.querySelector(
+  '[data-section="reference-websites"]'
+);
+if (refrenceWeb) {
+  if (
+    data.reference_websites &&
+    Array.isArray(data.reference_websites) &&
+    data.reference_websites.length > 0
+  ) {
+    const textEl = refrenceWeb.querySelector('.card-content');
+    if (textEl) {
+      const filteredSites = data.reference_websites.filter(
+        (site) => site && site.trim()
+      );
+      if (filteredSites.length > 0) {
+        textEl.innerHTML = filteredSites
+          .map((site) => `<li class="list-item">${site}</li>`)
+          .join('');
+      }
+    }
+    refrenceWeb.classList.remove('hidden');
+    console.log(
+      '[DEBUG] Populated non-tech-questions card with',
+      data.reference_websites.length,
+      'reference sites'
+    );
+  } else {
+    refrenceWeb.classList.add('hidden');
+  }
+}
+
 
   console.log('[DEBUG] Breakdown card population complete');
 }
@@ -730,6 +815,7 @@ async function startStreaming(payload) {
         const msg = obj.message || 'Processing...';
         setProgress(pct, msg);
       } else if (obj.type === 'cover_letter_done') {
+        generateBtn.disabled = false;
         // Backend explicitly sends the final cover letter
         renderCoverLetter(obj.content);
       } else if (obj.type === 'structured_data') {
@@ -740,6 +826,7 @@ async function startStreaming(payload) {
         }, 500);
       } else if (obj.type === 'done' || obj.type === 'finished') {
         // Final completion event - now display everything
+        generateBtn.disabled = false;
         setProgress(100, 'Completed!');
 
         setTimeout(() => {
@@ -749,6 +836,7 @@ async function startStreaming(payload) {
           showOutput();
         }, 500);
       } else if (obj.type === 'error') {
+        generateBtn.disabled = false;
         // alert('Server error: ' + (obj.message || 'Unknown'));
         errors.innerHTML = obj.message;
         errors.classList.remove('hidden');
@@ -824,8 +912,10 @@ generateBtn.addEventListener('click', async () => {
     client_text: text,
     context_snippets: urls,
     selected_categories: selectedCategories,
-    files: selectedFile,
-    session_id: sessionId
+    // files: selectedFile,
+    session_id: sessionId,
+    base64_string: fileBase64,
+    filename: filename
   };
 
   progressArea.classList.remove('hidden');
@@ -866,6 +956,7 @@ function showOutput() {
 }
 
 function showInput() {
+  generateBtn.disabled = false;
   clientText.value = '';
   urlList.innerHTML = '';
   document.querySelectorAll('.category-checkbox').forEach((checkbox) => {
@@ -944,7 +1035,7 @@ copyBtn.addEventListener('click', async () => {
 
 regenerateBtn.addEventListener('click', async () => {
   const text =
-    'regenerate a completely new cover letter. Use the same job description, same extracted fields, but produce a fresh, more accurate version. Do NOT repeat any previous wording. Give a new, unique human proposal + structured JSON output.';
+    'regenerate a completely new cover letter. Use the same job description, same extracted fields, but produce a fresh, more accurate version. Do NOT repeat any previous wording. Give a new, unique human proposal + structured JSON output. Also, DO not add wording like you give me perfect version just only add cover letter content';
 
   // let generation_mode = document.querySelector('input[name="generation-mode"]:checked').value;
 

@@ -40,9 +40,11 @@ def generate_cover_letter(request: HttpRequest):
     session_id = payload.get("session_id")
     client_text = payload.get("client_text")
     context_snippets = payload.get("context_snippets")
-    files = payload.get("files")
+    # files = payload.get("files")
     generation_mode = payload.get("generation_mode", "Creative") 
     categories = payload.get("selected_categories")
+    base64_string = payload.get("base64_string")
+    file_name = payload.get("file_name")
 
 
     config = {"configurable": {"thread_id": session_id}}
@@ -55,20 +57,22 @@ def generate_cover_letter(request: HttpRequest):
         generation_mode=generation_mode,
     )
 
-    state = {"categories": categories, "context_snippets": context_snippets, "uploaded_files": files}
+    state = {"categories": categories, "context_snippets": context_snippets}
 
     # ---- Build single agent input ----
     agent_input = build_agent_prompt(
         agent_prompt, 
         client_text, 
         state,
+        base64_string,
+        file_name
     )
     
     # ---- Create model with BOTH tools ----
     model = ChatOpenAI(model="gpt-5.1", temperature=0.1)
     
     # The agent now has access to both tools
-    tools = [extract_cover_letter_info, find_relevant_past_projects]
+    tools = [find_relevant_past_projects]
     
     agent = create_agent(model=model, tools=tools, middleware=[inject_context, state_based_output], checkpointer=checkpointer)
 

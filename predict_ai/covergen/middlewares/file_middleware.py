@@ -1,6 +1,6 @@
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Callable
-from ..helpers.system_prompts import ProposalAnalysisData, UpworkResponse
+from ..helpers.system_prompts import UpworkResponse
 
 @wrap_model_call
 def inject_context(
@@ -91,7 +91,6 @@ def state_based_output(
 ) -> ModelResponse:
     """Select output format based on State."""
     # request.messages is a shortcut for request.state["messages"]
-    message_count = len(request.messages)  
 
     request = request.override(response_format=UpworkResponse) 
 
