@@ -313,7 +313,6 @@ function setProgress(pct, text = 'Processing...') {
 
 // Helper function to populate the breakdown cards
 function populateBreakdownCards(data) {
-  // Find and update each card based on data keys from extraction_tool.py
   console.log('[DEBUG] populateBreakdownCards received:', data);
 
   if (!data) {

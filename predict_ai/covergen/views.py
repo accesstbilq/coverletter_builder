@@ -8,7 +8,6 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from .helpers.system_prompts import build_system_prompt, build_agent_prompt
 from .helpers.stream_helper import stream_generator
-from .tools.extraction_tool import extract_cover_letter_info
 from .tools.retrieval_tool import find_relevant_past_projects
 from .middlewares.file_middleware import inject_context, state_based_output
 from dotenv import load_dotenv
