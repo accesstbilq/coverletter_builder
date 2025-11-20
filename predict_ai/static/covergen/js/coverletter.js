@@ -6,27 +6,29 @@ const sessionId =
   Math.random().toString(36).slice(2, 10) +
   '-' +
   Date.now().toString(36);
-const clientText = document.getElementById('clientText');
-const urlInput = document.getElementById('urlInput');
-const addUrlBtn = document.getElementById('addUrlBtn');
-const urlList = document.getElementById('urlList');
-const fileInput = document.getElementById('fileInput');
-const generateBtn = document.getElementById('generateBtn');
-const regenerateBtn = document.getElementById('regenerate');
-const errors = document.getElementById('errors');
-const copyBtn = document.getElementById('copyCoverBtn');
-const copyFeedback = document.getElementById('copyCoverFeedback');
+const clientText = document.getElementById('clientText'),
+urlInput = document.getElementById('urlInput'),
+addUrlBtn = document.getElementById('addUrlBtn'),
+urlList = document.getElementById('urlList'),
+fileInput = document.getElementById('fileInput'),
+generateBtn = document.getElementById('generateBtn'),
+regenerateBtn = document.getElementById('regenerate'),
+errors = document.getElementById('errors'),
+copyBtn = document.getElementById('copyCoverBtn'),
+copyFeedback = document.getElementById('copyCoverFeedback');
+let loaderInterval;
+let loaderSeconds = 0;
 
 // Progress UI
-const progressPct = document.getElementById('progressPct');
-const progressCircle = document.getElementById('progressCircle');
-const progressText = document.getElementById('progressText');
-const subText = document.getElementById('subText');
-const progressOverlay = document.getElementById('progressOverlay');
+const progressPct = document.getElementById('progressPct'),
+progressCircle = document.getElementById('progressCircle'),
+progressText = document.getElementById('progressText'),
+subText = document.getElementById('subText'),
+progressOverlay = document.getElementById('progressOverlay');
 
 // Output Results Elements
-const coverLetterContentEl = document.querySelector('#coverLetterContentEl');
-const structuredJsonEl = document.getElementById('structuredJson');
+const coverLetterContentEl = document.querySelector('#coverLetterContentEl'),
+structuredJsonEl = document.getElementById('structuredJson');
 
 // SERVER STREAM URL
 const STREAM_URL = '/api/genrate-cover-letter';
@@ -39,6 +41,21 @@ let finalCoverLetterText = null;
 // Category selection tracking
 let selectedCategories = [];
 
+//JSON data element
+const briefCard = document.querySelector('[data-section="brief-message"]'),
+  scopeCard = document.querySelector('[data-section="project-scope"]'),
+  techCard = document.querySelector('[data-section="required-tech"]'),
+  nonTechReqCard = document.querySelector('[data-section="non-tech-req"]'),
+  unclearCard = document.querySelector('[data-section="unclear-points"]'),
+  techQuestionsCard = document.querySelector('[data-section="tech-questions"]'),
+  nonTechQuestionsCard = document.querySelector(
+    '[data-section="non-tech-questions"]'
+  ),
+  importantPointCard = document.querySelector(
+    '[data-section="important-point"]'
+  ),
+  Recommendations = document.querySelector('[data-section="recommendations"]'),
+  refrenceWeb = document.querySelector('[data-section="reference-websites"]');
 // -----------------------------------------------------
 // INITIAL UI SETUP
 // -----------------------------------------------------
@@ -46,16 +63,40 @@ function hideProgress() {
   generateBtn.disabled = false;
   progressOverlay.classList.add('hidden');
   document.body.classList.remove('overflow-hidden');
+  clearInterval(loaderInterval);
+}
+
+function clearCard(card) {
+  if (!card) return;
+  const content = card.querySelector('.card-content');
+  if (content) content.textContent = '';
 }
 
 function resetUI() {
   hideProgress();
   finalAnalysisData = null;
   finalCoverLetterText = null;
-  coverLetterContentEl.innerHTML = '<p>Loading cover letter...</p>';
-  if (!errors.classList.contains('hidden')) errors.classList.add('hidden');
-  // structuredJsonEl.textContent = '';
+
+  if (coverLetterContentEl) {
+    coverLetterContentEl.innerHTML = '<p>Loading cover letter...</p>';
+  }
+
+  clearCard(briefCard);
+  clearCard(scopeCard);
+  clearCard(techCard);
+  clearCard(nonTechReqCard);
+  clearCard(unclearCard);
+  clearCard(techQuestionsCard);
+  clearCard(nonTechQuestionsCard);
+  clearCard(importantPointCard);
+  clearCard(Recommendations);
+  clearCard(refrenceWeb);
+
+  if (errors && !errors.classList.contains('hidden')) {
+    errors.classList.add('hidden');
+  }
 }
+
 
 resetUI();
 
@@ -64,7 +105,9 @@ function cleanModelDividers(text) {
     .replace(/\r/g, '') // normalize CRLF
     .replace(/(^|\n)\s*={3,}\s*($|\n)/g, '\n') // remove ===== lines
     .replace(/(^|\n)\s*-{3,}\s*($|\n)/g, '\n') // remove --- lines
-    .replace(/(^|\n)\s*#{1,6}\s*OUTPUT\s*\d+.*($|\n)/gi, '\n') // remove "OUTPUT" headings
+    .replace(/(^|\n)\s*#{1,6}\s*OUTPUT\s*\d+.*($|\n)/gi, '') // remove "OUTPUT" headings
+    .replace('human_proposal_text', '')
+    .replace('structured_data', '')
     .trim();
 }
 
@@ -212,8 +255,11 @@ fileInput.addEventListener('change', (ev) => {
   // 2. Type Validation (PDF and Text)
   // Check for PDF specific MIME, generic text MIME, or common text-based extensions
   const isPdf = f.type === 'application/pdf';
-  const isText = f.type.startsWith('text/') || 
-                 /\.(txt|md|csv|json|js|py|html|css|xml|log|ini|yaml|yml|rb|c|cpp|h)$/i.test(f.name);
+  const isText =
+    f.type.startsWith('text/') ||
+    /\.(txt|md|csv|json|js|py|html|css|xml|log|ini|yaml|yml|rb|c|cpp|h)$/i.test(
+      f.name
+    );
 
   if (!isPdf && !isText) {
     alert('Invalid file type. Please upload a PDF or a Text file.');
@@ -313,7 +359,7 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 1: Main Objective (from main_objective field)
   // ========================================
-  const briefCard = document.querySelector('[data-section="brief-message"]');
+
   if (briefCard) {
     if (data.main_objective && data.main_objective.trim()) {
       const textEl = briefCard.querySelector('.card-content');
@@ -331,13 +377,27 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 2: Project Scope / Relevant Experience
   // ========================================
-  const scopeCard = document.querySelector('[data-section="project-scope"]');
   if (scopeCard) {
-    if (data.experience_summary && data.experience_summary.trim()) {
-      const textEl = scopeCard.querySelector('.card-content');
+    const textEl = scopeCard.querySelector('.card-content');
+    if (data.experience_summary && !Array.isArray(data.experience_summary)) {
       if (textEl) textEl.textContent = data.experience_summary;
       scopeCard.classList.remove('hidden');
     } else {
+      if (
+      data.experience_summary &&
+      Array.isArray(data.experience_summary) &&
+      data.experience_summary.length > 0
+    ) {
+       const filteredReqs = data.experience_summary.filter(
+          (req) => req && req.trim()
+        );
+        if (filteredReqs.length > 0) {
+          textEl.innerHTML = filteredReqs
+            .map((req) => `<li class="list-item">${req}</li>`)
+            .join('');
+        }
+
+    }
       scopeCard.classList.add('hidden');
     }
   }
@@ -345,7 +405,6 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 3: Required Technologies
   // ========================================
-  const techCard = document.querySelector('[data-section="required-tech"]');
   if (techCard) {
     if (
       data.required_technologies &&
@@ -382,9 +441,6 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 4: Non-Technical Requirements
   // ========================================
-  const nonTechReqCard = document.querySelector(
-    '[data-section="non-tech-req"]'
-  );
   if (nonTechReqCard) {
     if (
       data.non_technical_requirements &&
@@ -416,7 +472,6 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 5: Clarifying Questions
   // ========================================
-  const unclearCard = document.querySelector('[data-section="unclear-points"]');
   if (unclearCard) {
     if (
       data.clarifying_questions &&
@@ -448,9 +503,6 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 6: Tool Recommendations (Technical)
   // ========================================
-  const techQuestionsCard = document.querySelector(
-    '[data-section="tech-questions"]'
-  );
 
   if (techQuestionsCard) {
     let toolsHtml = '';
@@ -467,10 +519,10 @@ function populateBreakdownCards(data) {
           if (Array.isArray(reasoning)) {
             reasoning.forEach((r) => {
               if (r)
-                toolsHtml += `<li class="list-item"><strong>${tool}:</strong> ${r}</li>`;
+                toolsHtml += `<li class="list-item">${r}</li>`;
             });
           } else {
-            toolsHtml += `<li class="list-item"><strong>${tool}:</strong> ${reasoning}</li>`;
+            toolsHtml += `<li class="list-item">${reasoning}</li>`;
           }
         }
       }
@@ -493,9 +545,6 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 7: Reference Sites / URLs
   // ========================================
-  const nonTechQuestionsCard = document.querySelector(
-    '[data-section="non-tech-questions"]'
-  );
   if (nonTechQuestionsCard) {
     if (
       data.non_technical_questions &&
@@ -527,9 +576,6 @@ function populateBreakdownCards(data) {
   // ========================================
   // CARD 8: Important Point / Greeting
   // ========================================
-  const importantPointCard = document.querySelector(
-    '[data-section="important-point"]'
-  );
   if (importantPointCard) {
     if (data?.important_point && data?.important_point.trim()) {
       const textEl = importantPointCard.querySelector('.card-content');
@@ -544,87 +590,78 @@ function populateBreakdownCards(data) {
     }
   }
 
+  if (Recommendations) {
+    const recs = data.recommendations;
 
-const Recommendations = document.querySelector(
-  '[data-section="recommendations"]'
-);
+    // Must be a non-null object with at least one key
+    if (recs && typeof recs === 'object' && Object.keys(recs).length > 0) {
+      const textEl = Recommendations.querySelector('.card-content');
 
-if (Recommendations) {
-  const recs = data.recommendations;
+      if (textEl) {
+        const sections = Object.entries(recs)
+          .map(([category, items]) => {
+            if (!Array.isArray(items)) return '';
 
-  // Must be a non-null object with at least one key
-  if (recs && typeof recs === 'object' && Object.keys(recs).length > 0) {
-    const textEl = Recommendations.querySelector('.card-content');
+            const cleaned = items.filter((item) => item && item.trim());
+            if (cleaned.length === 0) return '';
 
-    if (textEl) {
-      const sections = Object.entries(recs)
-        .map(([category, items]) => {
-          if (!Array.isArray(items)) return '';
-
-          const cleaned = items.filter((item) => item && item.trim());
-          if (cleaned.length === 0) return '';
-
-          return `
-            <div class="mb-3">
-              <div class="font-semibold mb-1">${category}</div>
-              <ul class="list-disc list-inside">
-                ${cleaned
-                  .map((item) => `<li class="list-item">${item}</li>`)
-                  .join('')}
-              </ul>
-            </div>
-          `;
-        })
-        .filter(Boolean) // remove empty strings
-        .join('');
-
-      if (sections.trim()) {
-        textEl.innerHTML = sections;
-        Recommendations.classList.remove('hidden');
-        console.log(
-          '[DEBUG] Populated recommendations card with categories:',
-          Object.keys(recs)
-        );
-      } else {
-        Recommendations.classList.add('hidden');
-      }
-    }
-  } else {
-    Recommendations.classList.add('hidden');
-  }
-}
-
-const refrenceWeb = document.querySelector(
-  '[data-section="reference-websites"]'
-);
-if (refrenceWeb) {
-  if (
-    data.reference_websites &&
-    Array.isArray(data.reference_websites) &&
-    data.reference_websites.length > 0
-  ) {
-    const textEl = refrenceWeb.querySelector('.card-content');
-    if (textEl) {
-      const filteredSites = data.reference_websites.filter(
-        (site) => site && site.trim()
-      );
-      if (filteredSites.length > 0) {
-        textEl.innerHTML = filteredSites
-          .map((site) => `<li class="list-item">${site}</li>`)
+            return `
+              <div class="mb-3">
+                <div class="font-semibold mb-1">${category}</div>
+                <ul class="list-disc list-inside">
+                  ${cleaned
+                    .map((item) => `<li class="list-item">${item}</li>`)
+                    .join('')}
+                </ul>
+              </div>
+            `;
+          })
+          .filter(Boolean) // remove empty strings
           .join('');
-      }
-    }
-    refrenceWeb.classList.remove('hidden');
-    console.log(
-      '[DEBUG] Populated non-tech-questions card with',
-      data.reference_websites.length,
-      'reference sites'
-    );
-  } else {
-    refrenceWeb.classList.add('hidden');
-  }
-}
 
+        if (sections.trim()) {
+          textEl.innerHTML = sections;
+          Recommendations.classList.remove('hidden');
+          console.log(
+            '[DEBUG] Populated recommendations card with categories:',
+            Object.keys(recs)
+          );
+        } else {
+          Recommendations.classList.add('hidden');
+        }
+      }
+    } else {
+      Recommendations.classList.add('hidden');
+    }
+  }
+
+  if (refrenceWeb) {
+    if (
+      data.reference_websites &&
+      Array.isArray(data.reference_websites) &&
+      data.reference_websites.length > 0
+    ) {
+      const textEl = refrenceWeb.querySelector('.card-content');
+      if (textEl) {
+        const filteredSites = data.reference_websites.filter(
+          (site) => site && site.trim()
+        );
+        if (filteredSites.length > 0) {
+          textEl.innerHTML = filteredSites
+            .map((site) => `<li class="list-item">${site}</li>`)
+            .join('');
+        }
+      }
+      refrenceWeb.classList.remove('hidden');
+      console.log(
+        '[DEBUG] Populated non-tech-questions card with',
+        data.reference_websites.length,
+        'reference sites'
+      );
+    } else {
+      refrenceWeb.classList.add('hidden');
+    }
+  }
 
   console.log('[DEBUG] Breakdown card population complete');
 }
@@ -731,6 +768,14 @@ async function handleCopyClick(e) {
 // -----------------------------------------------------
 async function startStreaming(payload) {
   resetUI();
+  loaderSeconds = 0;
+  document.getElementById('loaderTime').textContent = `0s`;
+
+  loaderInterval = setInterval(() => {
+    loaderSeconds++;
+    console.log(loaderSeconds);
+    document.getElementById('loaderTime').textContent = `${loaderSeconds}s`;
+  }, 1000);
 
   let reader;
   try {
@@ -821,6 +866,7 @@ async function startStreaming(payload) {
         setTimeout(() => {
           document.getElementById('progressOverlay').classList.add('hidden');
           document.body.classList.remove('overflow-hidden');
+          clearInterval(loaderInterval);
           initializeCopyButtons();
           showOutput();
         }, 500);
@@ -895,7 +941,6 @@ generateBtn.addEventListener('click', async () => {
     fileBase64 = btoa(binary);
   }
 
-
   const payload = {
     action: 'generate',
     client_text: text,
@@ -950,7 +995,7 @@ function showInput() {
   urlList.innerHTML = '';
   document.querySelectorAll('.category-checkbox').forEach((checkbox) => {
     checkbox.checked = false;
-  })
+  });
   selectedCategories = [];
   selectedFile = null;
 
