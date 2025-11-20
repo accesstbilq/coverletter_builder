@@ -11,7 +11,7 @@ from .helpers.stream_helper import stream_generator
 from .tools.retrieval_tool import find_relevant_past_projects
 from .middlewares.file_middleware import inject_context, state_based_output
 from dotenv import load_dotenv
-from langchain.agents import create_agent
+from langchain.agents import create_agent, AgentState
 import json
 from django.conf import settings
 
@@ -23,6 +23,15 @@ load_dotenv()
 
 # Initialize langchain short memory
 checkpointer = InMemorySaver()
+
+
+class CustomAgentState(AgentState):
+    """Custom state with messages + custom fields"""
+    categories: list = []
+    context_snippets: list = []
+    base64_string: str = ""
+    file_name: str | None = None
+
 
 def chatbot_view(request: HttpRequest):
     """Render chatbot page"""
@@ -43,7 +52,7 @@ def generate_cover_letter(request: HttpRequest):
     generation_mode = payload.get("generation_mode", "Professional") 
     categories = payload.get("selected_categories")
     base64_string = payload.get("base64_string")
-    file_name = payload.get("file_name")
+    file_name = payload.get("filename")
 
 
     config = {"configurable": {"thread_id": session_id}}
@@ -56,7 +65,13 @@ def generate_cover_letter(request: HttpRequest):
         generation_mode=generation_mode,
     )
 
-    state = {"categories": categories, "context_snippets": context_snippets}
+    state = {
+        "messages": [{"role": "user", "content": "Raed this context and give anser based on"}],  # REQUIRED
+        "categories": categories,
+        "context_snippets": context_snippets,
+        "base64_string": base64_string,
+        "file_name": file_name
+    }
 
     # ---- Build single agent input ----
     agent_input = build_agent_prompt(
@@ -73,14 +88,18 @@ def generate_cover_letter(request: HttpRequest):
     # The agent now has access to both tools
     tools = [find_relevant_past_projects]
     
-    agent = create_agent(model=model, tools=tools, middleware=[inject_context, state_based_output], checkpointer=checkpointer)
+    agent = create_agent(model=model, tools=tools, middleware=[inject_context, state_based_output], state_schema=CustomAgentState, checkpointer=checkpointer)
+
+    if categories or context_snippets or base64_string:
+        agent.invoke(state, config=config)
 
     # ---- Streaming response with dual output ----
     response = StreamingHttpResponse(
         stream_generator(
             agent=agent,
             agent_input=agent_input,
-            config=config
+            config=config,
+            state=state
         ),
         content_type="text/event-stream",
         charset="utf-8",

@@ -152,9 +152,7 @@
                                                 <span>Generate Now</span>
                                             </button>
 
-                                            <div id="errors"
-                                                class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                                            </div>
+                                            
                                         </div>
                                         </div>
                                         <div class="col-span-3">
@@ -176,6 +174,9 @@
                                             </div>
                                             <div id="urlList" class="mt-4 space-y-3"></div>
                                         </div>
+                                        <div id="errors"
+                                                class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                                            </div>
                                     </div>
                                 </div>
                             </div>
@@ -349,10 +350,10 @@
                                 </h2>
 
                                 <div id="coverLetterCard"
-                                    class="overflow-auto max-h-[500px] p-5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 flex flex-col gap-3">
-                                    <div class="cover-header">
+                                    class="relative overflow-auto max-h-[500px] p-5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 flex flex-col gap-3">
+                                    <div class="cover-header absolute right-0">
 
-                                        <div class="cover-actions">
+                                        <div class="cover-actions ">
                                             <button id="copyCoverBtn"
                                                 class="flex items-center justify-center gap-1.5 rounded-md h-8 px-2.5 bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-medium hover:bg-orange-200 dark:hover:bg-orange-500/30 transition-colors">
                                                 <span class="material-symbols-outlined text-sm">content_copy</span>
@@ -374,11 +375,6 @@
                             <div class="space-y-6">
                                 <h2 class="text-2xl font-bold text-[#111318] dark:text-white">Point-Wise Breakdown</h2>
                                 <div id="breakdownContainer" class="grid grid-cols-1 @lg:grid-cols-2 gap-6">
-
-
-
-
-
 
                                     <div data-section="tech-questions"
                                         class="hidden p-5 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-900 flex flex-col gap-3">

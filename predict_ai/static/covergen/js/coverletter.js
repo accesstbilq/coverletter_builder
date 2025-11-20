@@ -106,8 +106,10 @@ function cleanModelDividers(text) {
     .replace(/(^|\n)\s*={3,}\s*($|\n)/g, '\n') // remove ===== lines
     .replace(/(^|\n)\s*-{3,}\s*($|\n)/g, '\n') // remove --- lines
     .replace(/(^|\n)\s*#{1,6}\s*OUTPUT\s*\d+.*($|\n)/gi, '') // remove "OUTPUT" headings
-    .replace('human_proposal_text', '')
-    .replace('structured_data', '')
+    .replace('human_proposal_text:', '')
+    .replace('structured_data:', '')
+    .replace('**human_proposal_text**', '')
+    .replace('**structured_data**', '')
     .trim();
 }
 

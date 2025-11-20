@@ -61,6 +61,7 @@ def stream_generator(
     agent,
     agent_input: Dict[str, Any],
     config: Dict[str, Any],
+    state: Dict[str, Any]
 ) -> Generator[str, None, None]:
     """
     Streams SSE-like events from a multi-step agent with **smooth 1-100% progress**.
@@ -117,6 +118,7 @@ def stream_generator(
 
     def update_response_text(new_text: str) -> None:
         """Update full response text with new content"""
+        print(f"[DEBUG] Updating response text with {len(new_text)} chars")
         nonlocal full_response_text
         full_response_text += new_text
 
@@ -165,7 +167,13 @@ def stream_generator(
         # ============================================
         all_messages = []  # Collect all messages to find final AI response
 
-        for step in agent.stream(agent_input, config=config, stream_mode="messages"):
+        for step in agent.stream(agent_input, config=config, stream_mode="messages",state=state):
+            last_message1 =step
+            # yield last_message1
+            # yield emit_sse({
+            #     "type": "streaming",
+            #     "messages": last_message1
+            # }) 
 
             # Emit smooth progress every 100ms
             elapsed = time.time() - start_time
@@ -201,8 +209,8 @@ def stream_generator(
             message_type = getattr(last_message, 'type', None)
             message_name = getattr(last_message, 'name', None)
             message_content = getattr(last_message, 'content', None)
-
-            # ============================================
+            print(f"[DEBUG] Last message: type={message_type}")
+           # ============================================
             # PROJECTS TOOL
             # ============================================
             if message_type == "tool" and message_name == "find_relevant_past_projects":
@@ -223,6 +231,7 @@ def stream_generator(
 
                 # Stream tokens
                 current_content = last_message.content
+
 
                 if isinstance(current_content, str) and current_content != last_content:
                     if current_content.startswith(last_content):
@@ -334,7 +343,6 @@ def stream_generator(
         # PARSE RESPONSE INTO COVER LETTER & STRUCTURED DATA
         # ============================================
         cover_letter_only = ""
-
         if full_response_text:
             # 1) First try: treat the entire response as JSON (structured output case)
             parsed_top = None
@@ -437,11 +445,6 @@ def stream_generator(
         else:
             print("[DEBUG] WARNING: No cover letter text to send!")
 
-        # Ramp progress to 95% quickly
-        yield emit_progress(85, "Wrapping up...")
-        yield emit_progress(90, "Almost there...")
-        yield emit_progress(95, "Finalizing...")
-
         # Emit breakdown (analysis_done) event FIRST if we have it
         if breakdown_data:
             print(f"[DEBUG] Emitting analysis_done with breakdown: {list(breakdown_data.keys()) if isinstance(breakdown_data, dict) else breakdown_data}")
@@ -466,10 +469,7 @@ def stream_generator(
             "output_tokens": completion_tokens,
             "total_tokens": total_tokens
         })
-
-        # Final: 100%
-        yield emit_progress(100, "Complete!")
-
+        
     except Exception as e:
         # ============================================
         # ERROR HANDLING

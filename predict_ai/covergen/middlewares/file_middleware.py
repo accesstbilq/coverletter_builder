@@ -1,6 +1,7 @@
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
 from typing import Callable
 from ..helpers.system_prompts import UpworkResponse
+import mimetypes
 
 @wrap_model_call
 def inject_context(
@@ -11,9 +12,12 @@ def inject_context(
     Inject context about files, categories, and snippets user has provided this session.
     Handles payload keys: 'files', 'context_snippets', 'categories'.
     """
+    print("[TEST Inject Context]")
     # 1. Read from State using the specific keys from your payload
     # We look for 'files', defaulting to empty list if not found.
     raw_files = request.state.get("uploaded_files", [])
+    base64_string = request.state.get("base64_string", "")
+    file_name = request.state.get("file_name", None)
     context_snippets = request.state.get("context_snippets", [])
     categories = request.state.get("categories", [])
 
@@ -58,6 +62,18 @@ def inject_context(
         snippets_str = "Relevant Sources/Context:\n" + "\n".join(snippet_descriptions)
         context_parts.append(snippets_str)
 
+
+    if base64_string:
+        # Auto-detect MIME type
+        detected_mime = None
+        if file_name:
+            detected_mime, _ = mimetypes.guess_type(file_name)
+        if not detected_mime:
+            detected_mime = "application/octet-stream"
+
+        snippets_str = "Files uploaded:\n" + "\n".join(base64_string) + "mime_type: " + detected_mime + "\n"
+        context_parts.append(snippets_str)
+    print("CONETXT PART *******", context_parts, base64_string)
     # 5. Inject into Messages
     if context_parts:
         # Join all parts with double newlines for distinct separation
@@ -78,7 +94,8 @@ def inject_context(
             *request.messages,
             {"role": "system", "content": final_system_instruction}, 
         ]
-        
+
+        print("message in middlware£££££££££££3333333", messages)
         request = request.override(messages=messages)
 
     return handler(request)
