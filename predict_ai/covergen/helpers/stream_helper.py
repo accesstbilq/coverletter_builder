@@ -174,11 +174,6 @@ def stream_generator(
         # ============================================
         yield emit_progress(1, "Initializing...")
 
-        extraction_completed = False
-        projects_completed = False
-        generation_completed = False
-        generation_start_time = None
-
         # ============================================
         # STREAM AGENT EXECUTION
         # ============================================
@@ -223,21 +218,6 @@ def stream_generator(
                     yield emit_sse({"type": "done"})
                     send_text = True
 
-            # Emit smooth progress every 100ms
-            elapsed = time.time() - start_time
-            now = time.time()
-            # if now - last_emit_time >= 0.1 and not generation_completed:
-            #     smooth_pct = get_smooth_progress(elapsed, "processing")
-            #     message_templates = [
-            #         "Analyzing...",
-            #         "Processing...",
-            #         "Thinking...",
-            #         "Generating...",
-            #         "Almost done..."
-            #     ]
-            #     msg_idx = min(len(message_templates) - 1, int(smooth_pct / 20))
-            #     yield emit_progress(smooth_pct, message_templates[msg_idx])
-
             # Validate step structure
             if not isinstance(step, list) or not step:
                 continue
@@ -276,10 +256,6 @@ def stream_generator(
 
         # ============================================
         # EXTRACT FINAL RESPONSE FROM COLLECTED MESSAGES
-        # ============================================
-        print(f"[DEBUG] Total messages collected: {len(all_messages)}")
-        print(f"[DEBUG] Current token counts: prompt={prompt_tokens}, completion={completion_tokens}")
-
         # Extract token usage from all collected messages
         for msg in all_messages:
             if hasattr(msg, "usage_metadata") and msg.usage_metadata:
