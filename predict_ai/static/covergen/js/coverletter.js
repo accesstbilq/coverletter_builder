@@ -13,7 +13,6 @@ urlList = document.getElementById('urlList'),
 fileInput = document.getElementById('fileInput'),
 generateBtn = document.getElementById('generateBtn'),
 regenerateBtn = document.getElementById('regenerate'),
-errors = document.getElementById('errors'),
 copyBtn = document.getElementById('copyCoverBtn'),
 copyFeedback = document.getElementById('copyCoverFeedback');
 let loaderInterval;
@@ -92,9 +91,6 @@ function resetUI() {
   clearCard(Recommendations);
   clearCard(refrenceWeb);
 
-  if (errors && !errors.classList.contains('hidden')) {
-    errors.classList.add('hidden');
-  }
 }
 
 
@@ -791,16 +787,14 @@ async function startStreaming(payload) {
     });
 
     if (!res.ok) {
-      errors.innerHTML = res;
-      errors.classList.remove('hidden');
+      showError(res)
       hideProgress();
       return;
     }
 
     reader = res.body.getReader();
   } catch (error) {
-    errors.innerHTML = error;
-    errors.classList.remove('hidden');
+    showError(error)
     hideProgress();
     return;
   }
@@ -877,9 +871,7 @@ async function startStreaming(payload) {
         }, 500);
       } else if (obj.type === 'error') {
         generateBtn.disabled = false;
-        // alert('Server error: ' + (obj.message || 'Unknown'));
-        errors.innerHTML = obj.message;
-        errors.classList.remove('hidden');
+        showError(obj.message)
         hideProgress();
         document.getElementById('progressOverlay').classList.add('hidden');
         return;
@@ -1155,4 +1147,24 @@ async function extractPdfText(file) {
   }
 
   return fullText.slice(0, 1500) + ' ...';
+}
+
+
+/**
+ * Display Error in the overlay
+ */
+function showError(message, details) {
+  const overlay = document.getElementById("errorOverlay");
+  const titleEl = document.getElementById("progressText1");
+  const subEl = document.getElementById("loaderTime");
+  const detailsEl = document.getElementById("errorDetails");
+
+  if (message) titleEl.textContent = message;
+  if (details) {
+    detailsEl.textContent = details;
+    detailsEl.classList.remove("hidden");
+  }
+
+  subEl.textContent = "Please try again in a moment.";
+  overlay.classList.remove("hidden");
 }

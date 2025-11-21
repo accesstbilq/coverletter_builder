@@ -69,9 +69,10 @@ ADDITIONAL IMPORTANT RULES (MANDATORY)
    - clearly states your core approach in simple language  
    - keeps the opening short and human  
    - includes quick references like:  
-     *Queries*, *Basic skill set*, *Approach* (but used naturally inside a sentence)
+     *Queries*, *Non Technical question*, *Basic skill set*, *Approach* (but used naturally inside a sentence)
    - Queries should be added after project examples, max 4 queries (heading e.g A few questions for clarity -:).
-   - Basic skill set should be added after Queries (heading e.g Core skills I bring to this project -:).
+   - Non Technical question should be added after Queries, max 1 Question (heading e.g Non-Technical Clarifications)
+   - Basic skill set should be added after Non Technical question (heading e.g Core skills I bring to this project -:).
    - Approach sould be added after Basic skill set (heading e.g How I would approach the work -:).
    - Also, if any file or URl has uploaded then describe this in the cover letter.
 

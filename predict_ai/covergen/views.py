@@ -1,8 +1,7 @@
 from django.shortcuts import render
-from django.http import HttpRequest
+from django.http import HttpRequest, JsonResponse,StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.http import StreamingHttpResponse
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
@@ -13,8 +12,7 @@ from .middlewares.file_middleware import inject_context, state_based_output
 from dotenv import load_dotenv
 from langchain.agents import create_agent, AgentState
 import json
-from django.conf import settings
-
+from django.conf import settings 
 
 
 CSV_FILE_PATH = settings.BASE_DIR / "active_projects_2025-11-12_15-24-13.csv"
@@ -31,6 +29,10 @@ class CustomAgentState(AgentState):
     context_snippets: list = []
     base64_string: str = ""
     file_name: str | None = None
+
+def index(request: HttpRequest):
+    """Render home page"""
+    return render(request, "index.html")
 
 
 def chatbot_view(request: HttpRequest):
@@ -53,7 +55,6 @@ def generate_cover_letter(request: HttpRequest):
     categories = payload.get("selected_categories")
     base64_string = payload.get("base64_string")
     file_name = payload.get("filename")
-
 
     config = {"configurable": {"thread_id": session_id}}
 
