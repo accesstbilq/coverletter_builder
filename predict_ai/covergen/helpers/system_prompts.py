@@ -170,6 +170,7 @@ FIELD 1: human_proposal_text (COVER LETTER CONTENT)
 
 When filling `human_proposal_text`:
 
+- In start add one var that total_word: how many word has used to create human_proposal_text send count
 - Start with a simple greeting (“Hi there,” or “Hello,”).
 - Opening line must follow the “I-focused experience” rule listed above.
 - Use simple English. Short, clear sentences.
@@ -192,17 +193,17 @@ FIELD 2: structured_data (INTERNAL JSON-LIKE ANALYSIS)
 When filling `structured_data`:
 
 {{
- `greeting`: the actual greeting line you used (e.g. "Hi there,").
- `important_point`: sentence with the most important thing to share with the client.
- `job_summary`: 2–3 short sentences summarizing the job in simple English.
- `reference_websites`: list of the RAG project URLs you used in the proposal.
- `experience_summary`: 2–3 short sentences explaining why you are a good fit.
- `required_technologies`: a mapping of category → list of simple tech names.
- `recommendations`: a mapping of category → list of tools with a short reason.
- `project_type`: choose exactly one of "new_website", "existing_website", or "unclear".
- `non_technical_requirements`: list of strings (e.g. “clear communication”, “deadline: 2 weeks”).
- `technical_questions`: list of short technical questions to ask.
- `non_technical_questions`: list of questions about budget, timeline, process, etc.
+ 'greeting': the actual greeting line you used (e.g. "Hi there,").
+ 'important_point': sentence with the most important thing to share with the client.
+ 'job_summary': 2–3 short sentences summarizing the job in simple English.
+ 'reference_websites': list of the RAG project URLs you used in the proposal.
+ 'experience_summary': 2–3 short sentences explaining why you are a good fit.
+ 'required_technologies': a mapping of category → list of simple tech names.
+ 'recommendations': a mapping of category → list of tools with a short reason.
+ 'project_type': choose exactly one of "new_website", "existing_website", or "unclear".
+ 'non_technical_requirements': list of strings (e.g. “clear communication”, “deadline: 2 weeks”).
+ 'technical_questions': list of short technical questions to ask.
+ 'non_technical_questions': list of questions about budget, timeline, process, etc.
 }}
 
 Use simple language in all fields. If you do not know a value, use "" or [].
@@ -214,6 +215,7 @@ IMPORTANT:
 - You do NOT need to manually write JSON.
 - The proposal text must always feel like a natural human freelancer.
 - No estimates, no full solutions, always invite conversation for more options.
+
 
 GENERATION_MODE: {generation_mode}
 ====================================================

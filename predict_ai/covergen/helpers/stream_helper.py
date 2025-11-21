@@ -2,6 +2,7 @@ import json
 import time
 import traceback
 from typing import Dict, Any, Generator
+import re
 
 # --- JSON extractor helper ---
 class JSONExtractionError(Exception):
@@ -127,6 +128,22 @@ def stream_generator(
         nonlocal breakdown_data
         breakdown_data = data
 
+    def fix_json_like_string(bad_json: str):
+        """
+        Convert JS-like object (with single quotes, unquoted keys, etc.)
+        into valid JSON as much as possible.
+        """
+        # 1) Replace single quotes around strings → double quotes
+        bad_json = re.sub(r"\'([^']*)\'", r'"\1"', bad_json)
+
+        # 2) Add quotes around keys if missing
+        bad_json = re.sub(r'(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)', r'\1 "\2"\3', bad_json)
+
+        # 3) Remove trailing commas
+        bad_json = re.sub(r',\s*([}\]])', r'\1', bad_json)
+
+        return bad_json
+
     def get_smooth_progress(elapsed_time: float, phase_name: str) -> int:
         """
         Get smooth progress based on elapsed time.
@@ -167,28 +184,59 @@ def stream_generator(
         # ============================================
         all_messages = []  # Collect all messages to find final AI response
 
+        response_text = ""
+        text_only = ""
+        json_data = ""
+        sent_words = 0
+        total_word = 0
+        send_text = False
         for step in agent.stream(agent_input, config=config, stream_mode="messages",state=state):
-            last_message1 =step
-            # yield last_message1
-            # yield emit_sse({
-            #     "type": "streaming",
-            #     "messages": last_message1
-            # }) 
+            last_message1 =step[0]
+            msg_type = getattr(last_message1, "type", None)
+            content = getattr(last_message1, "content", None)
+            response_text += content
+
+            if "human_proposal_text" in response_text and "structured_data" not in response_text:
+                text_only += content
+
+            match = re.search(r"total_word:\s*(\d+)", text_only)
+            if match and "structured_data" not in response_text:
+                total_word = int(match.group(1))
+                new_words = len(text_only.split())
+                sent_words += new_words
+                progress = int((sent_words / total_word) * 100)
+                if progress <= 100:
+                    print("total_word:", total_word, "sent_words:", sent_words, "progress:", progress)
+                    yield emit_sse({
+                        "type": "progress",
+                        "percent": min(progress, 100),
+                        "message": "Generating your cover letter..."
+                    })
+
+            if "structured_data" in response_text:
+                json_data += content
+                if not send_text:
+                    yield emit_sse({
+                        "type": "cover_letter_done",
+                        "content": text_only
+                    })
+                    yield emit_sse({"type": "done"})
+                    send_text = True
 
             # Emit smooth progress every 100ms
             elapsed = time.time() - start_time
             now = time.time()
-            if now - last_emit_time >= 0.1 and not generation_completed:
-                smooth_pct = get_smooth_progress(elapsed, "processing")
-                message_templates = [
-                    "Analyzing...",
-                    "Processing...",
-                    "Thinking...",
-                    "Generating...",
-                    "Almost done..."
-                ]
-                msg_idx = min(len(message_templates) - 1, int(smooth_pct / 20))
-                yield emit_progress(smooth_pct, message_templates[msg_idx])
+            # if now - last_emit_time >= 0.1 and not generation_completed:
+            #     smooth_pct = get_smooth_progress(elapsed, "processing")
+            #     message_templates = [
+            #         "Analyzing...",
+            #         "Processing...",
+            #         "Thinking...",
+            #         "Generating...",
+            #         "Almost done..."
+            #     ]
+            #     msg_idx = min(len(message_templates) - 1, int(smooth_pct / 20))
+            #     yield emit_progress(smooth_pct, message_templates[msg_idx])
 
             # Validate step structure
             if not isinstance(step, list) or not step:
@@ -210,48 +258,6 @@ def stream_generator(
             message_name = getattr(last_message, 'name', None)
             message_content = getattr(last_message, 'content', None)
             print(f"[DEBUG] Last message: type={message_type}")
-           # ============================================
-            # PROJECTS TOOL
-            # ============================================
-            if message_type == "tool" and message_name == "find_relevant_past_projects":
-                if not projects_completed:
-                    projects_completed = True
-                    yield emit_progress(45, "Finding relevant projects...")
-                    yield emit_progress(55, "Projects matched!")
-
-            # ============================================
-            # AI RESPONSE (Generation)
-            # ============================================
-            elif message_type == "ai":
-
-                # Mark generation start
-                if generation_start_time is None:
-                    generation_start_time = time.time()
-                    yield emit_progress(60, "Generating response...")
-
-                # Stream tokens
-                current_content = last_message.content
-
-
-                if isinstance(current_content, str) and current_content != last_content:
-                    if current_content.startswith(last_content):
-                        # Incremental update
-                        new_part = current_content[len(last_content):]
-                        if new_part:
-                            update_response_text(new_part)
-                            yield emit_sse({
-                                "type": "token",
-                                "content": new_part
-                            })
-                    else:
-                        # Full replacement (first time or reset)
-                        update_response_text(current_content)
-                        yield emit_sse({
-                            "type": "token",
-                            "content": current_content
-                        })
-
-                    last_content = current_content
 
             # ============================================
             # TOKEN USAGE (Extract from any message)
@@ -378,7 +384,8 @@ def stream_generator(
             else:
                 # 2) Fallback: old behavior — cover letter + JSON embedded in text
                 try:
-                    parsed_json, json_start, json_end = extract_json_and_span(full_response_text)
+                    candidate_fixed = fix_json_like_string(full_response_text)
+                    parsed_json, json_start, json_end = extract_json_and_span(candidate_fixed)
 
                     # Emit structured JSON as its own event
                     print("[DEBUG] Emitting structured_data event with parsed JSON from embedded block")
@@ -391,7 +398,6 @@ def stream_generator(
                     cover_letter_only = full_response_text[:json_start]
 
                     # Heuristics to clean trailing separators / headers
-                    import re
                     cover_letter_only = re.sub(r"(?s)\n\s*={3,}\s*$", "\n", cover_letter_only)  # trailing =====
                     cover_letter_only = re.sub(r"(?i)\n\s*###?\s*\**OUTPUT\s*2.*$", "\n", cover_letter_only)
                     cover_letter_only = re.sub(r"(?i)\n\s*###?\s*\**OUTPUT\s*1.*$", "\n", cover_letter_only)
@@ -438,10 +444,10 @@ def stream_generator(
         # Emit final cover letter using cover_letter_only (this will not include the JSON block)
         if cover_letter_only:
             print(f"[DEBUG] Emitting cover_letter_done (cleaned) with {len(cover_letter_only)} chars")
-            yield emit_sse({
-                "type": "cover_letter_done",
-                "content": cover_letter_only
-            })
+            # yield emit_sse({
+            #     "type": "cover_letter_done",
+            #     "content": cover_letter_only
+            # })
         else:
             print("[DEBUG] WARNING: No cover letter text to send!")
 
@@ -454,10 +460,6 @@ def stream_generator(
             })
         else:
             print("[DEBUG] WARNING: No breakdown data to send!")
-
-
-        # Emit done event
-        yield emit_sse({"type": "done"})
 
         # Emit token usage
         total_tokens = prompt_tokens + completion_tokens

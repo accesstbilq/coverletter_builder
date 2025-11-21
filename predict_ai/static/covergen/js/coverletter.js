@@ -69,7 +69,7 @@ function hideProgress() {
 function clearCard(card) {
   if (!card) return;
   const content = card.querySelector('.card-content');
-  if (content) content.textContent = '';
+  if (content) content.textContent = 'Loading...';
 }
 
 function resetUI() {
@@ -110,6 +110,9 @@ function cleanModelDividers(text) {
     .replace('structured_data:', '')
     .replace('**human_proposal_text**', '')
     .replace('**structured_data**', '')
+    .replace('structured', '')
+    .replace('_text:', '')
+    .replace(/total_word:\s*(\d+)/, '')
     .trim();
 }
 
